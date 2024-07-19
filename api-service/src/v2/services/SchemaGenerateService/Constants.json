@@ -1,0 +1,20 @@
+{
+    "SCHEMA_RESOLUTION_TYPE": {
+        "OPTIONAL_TYPE": "OPTIONAL_TYPE",
+        "FORMAT_TYPE": "FORMAT_TYPE",
+        "DATA_TYPE": "DATA_TYPE",
+        "INDEX": "INDEX",
+        "TRANSFORM": "TRANSFORM",
+        "DROP": "DROP",
+        "DEDUP": "DEDUP",
+        "NULL_FIELD": "NULL_FIELD",
+        "ARRIVAL_FORMAT": "ARRIVAL_FORMAT"
+    },
+    "SEVERITY": {
+        "CRITICAL": "CRITICAL",
+        "MEDIUM": "MEDIUM",
+        "HIGH": "HIGH",
+        "LOW": "LOW",
+        "MUST-FIX": "MUST-FIX"
+    }
+}

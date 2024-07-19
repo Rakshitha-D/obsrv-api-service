@@ -22,6 +22,7 @@
     "@aws-sdk/s3-request-presigner": "^3.540.0",
     "@azure/storage-blob": "^12.17.0",
     "@google-cloud/storage": "^7.9.0",
+    "@jsonhero/schema-infer": "^0.1.5",
     "@project-sunbird/logger": "^0.0.9",
     "ajv": "^8.11.2",
     "ajv-formats": "^2.1.1",

@@ -56,6 +56,8 @@ export const config = {
   },
   "exclude_datasource_validation": process.env.exclude_datasource_validation ? process.env.exclude_datasource_validation.split(",") : ["system-stats", "failed-events-summary", "masterdata-system-stats", "system-events"], // list of datasource names to skip validation while calling query API
   "telemetry_dataset": process.env.telemetry_dataset || `${env}.system.telemetry.events`,
+  "rollup_ratio": parseInt(process.env.rollup_ratio || "80"),
+  "unique_formats": ["uuid", "email", "uri", "ipv4", "ipv6"],
   "table_config": {   // This object defines the configuration for each table.
     "datasets": {
       "primary_key": "id",

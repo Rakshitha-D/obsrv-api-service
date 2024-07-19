@@ -1,0 +1,2031 @@
+openapi: 3.0.0
+info:
+  title: V2 docs
+  version: 1.0.0
+servers:
+  - url: localhost:3000
+  - url: http://localhost:3007
+paths:
+  /v2/datasets/create:
+    post:
+      tags:
+        - Dataset API's
+      summary: API to create a new dataset.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.datasets.create
+                ver: v1
+                ts: '2024-04-10T16:10:50+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                request:
+                  type: event
+                  name: sb-telemetry
+                  validation_config:
+                    validate: true
+                    mode: Strict
+                  extraction_config:
+                    is_batch_event: true
+                    extraction_key: events
+                    dedup_config:
+                      drop_duplicates: true
+                      dedup_key: id
+                  dedup_config:
+                    drop_duplicates: true
+                    dedup_key: mid
+                  data_schema:
+                    $schema: https://json-schema.org/draft/2020-12/schema
+                    type: object
+                    properties:
+                      mid:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      ets:
+                        type: integer
+                        arrival_format: number
+                        data_type: epoch
+                      eid:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                    additionalProperties: true
+                  denorm_config:
+                    denorm_fields:
+                      - denorm_key: eid
+                        denorm_out_field: userdata
+                        dataset_id: master-telemetry
+                  transformations_config:
+                    - field_key: email
+                      transformation_function:
+                        type: mask
+                        expr: mid
+                        datatype: string
+                        category: pii
+                      mode: Strict
+                  tags:
+                    - tag1
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success: Dataset created successfullly'
+                  value:
+                    id: api.datasets.create
+                    ver: v1
+                    ts: '2024-07-15T18:44:08+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 276c042c-0f23-4b26-9b10-6fe48bbc2d3a
+                    responseCode: OK
+                    result:
+                      id: telemetry_record-t4
+                      version_key: '1721049248930'
+                example-1:
+                  summary: 'Success: Master dataset created successfully'
+                  value:
+                    id: api.datasets.create
+                    ver: v1
+                    ts: '2024-07-16T08:36:40+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 845076be-d9e7-4246-bb8e-07ae0ce59d1e
+                    responseCode: OK
+                    result:
+                      id: telemetry_record-master
+                      version_key: '1721099200603'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.datasets.create
+                ver: v1
+                ts: '2024-07-16T08:39:00+05:30'
+                params:
+                  status: FAILED
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                  resmsgid: a07de860-dcbc-4ff6-822e-34b47635c8a3
+                responseCode: BAD_REQUEST
+                result: {}
+                error:
+                  code: DATASET_INVALID_INPUT
+                  message: >-
+                    #properties/request/required must have required property
+                    'dataset_id'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: Master dataset already exists'
+                  value:
+                    id: api.datasets.create
+                    ver: v1
+                    ts: '2024-07-16T08:37:28+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 138b796b-1b68-481a-a59d-1cb695c1adc9
+                    responseCode: CONFLICT
+                    result: {}
+                    error:
+                      code: DATASET_EXISTS
+                      message: Dataset Already exists with id:telemetry_record-master
+                example-1:
+                  summary: 'Failure: Dataset already exists'
+                  value:
+                    id: api.datasets.create
+                    ver: v1
+                    ts: '2024-07-16T08:38:05+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: bf62693c-3aa4-42ce-a5ea-4bde340740f5
+                    responseCode: CONFLICT
+                    result: {}
+                    error:
+                      code: DATASET_EXISTS
+                      message: Dataset Already exists with id:telemetry_record-t4
+  /v2/files/generate-url:
+    post:
+      tags:
+        - Dataset API's
+      summary: API to generate presigned url's
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.files.generate-url
+                ver: v1
+                ts: '2024-04-19T12:58:47+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                request:
+                  files:
+                    - telemetry.json
+                    - school_data.json
+                  access: write
+      parameters:
+        - name: Content-Type
+          in: header
+          schema:
+            type: string
+          example: application/json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success: Generate put url'
+                  value:
+                    id: api.files.generate-url
+                    ver: v1
+                    ts: '2024-07-16T08:26:19+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 5306f309-4a15-458e-89e2-29d8ac0835d4
+                    responseCode: OK
+                    result:
+                      - filePath: >-
+                          test-connector/api-service/user_uploads/telemetry_10d595.json
+                        fileName: telemetry.json
+                        preSignedUrl: >-
+                          https://test-connector.s3.us-east-2.amazonaws.com/test-connector/api-service/user_uploads/telemetry_10d595.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA2SANCC6IV26VYMEG%2F20240716%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240716T025619Z&X-Amz-Expires=600&X-Amz-Signature=49bbe1fe3fb1a16a0baa07ecd7331d9f6500c476287d225077f1a5dbccddeb50&X-Amz-SignedHeaders=host&x-id=PutObject
+                      - filePath: >-
+                          test-connector/api-service/user_uploads/school_data_33109a.json
+                        fileName: school_data.json
+                        preSignedUrl: >-
+                          https://test-connector.s3.us-east-2.amazonaws.com/test-connector/api-service/user_uploads/school_data_33109a.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA2SANCC6IV26VYMEG%2F20240716%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240716T025619Z&X-Amz-Expires=600&X-Amz-Signature=5ece002651b6437caa0193b5241a9172faec600093e4dca7f831645004c38cf5&X-Amz-SignedHeaders=host&x-id=PutObject
+                example-1:
+                  summary: 'Success: Generate get url'
+                  value:
+                    id: api.files.generate-url
+                    ver: v1
+                    ts: '2024-07-16T09:31:40+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 009c0b2d-8acd-40b0-a807-bbacf9242771
+                    responseCode: OK
+                    result:
+                      - filePath: test-connector/api-service/user_uploads/telemetry.json
+                        fileName: telemetry.json
+                        preSignedUrl: >-
+                          https://test-connector.s3.us-east-2.amazonaws.com/test-connector/api-service/user_uploads/telemetry.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA2SANCC6IV26VYMEG%2F20240716%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240716T040140Z&X-Amz-Expires=600&X-Amz-Signature=f14978e897a7a15f23afb1ef9496d187a2f21abfb71c55a568461be4c5688cc6&X-Amz-SignedHeaders=host&x-id=GetObject
+                      - filePath: >-
+                          test-connector/api-service/user_uploads/school_data.json
+                        fileName: school_data.json
+                        preSignedUrl: >-
+                          https://test-connector.s3.us-east-2.amazonaws.com/test-connector/api-service/user_uploads/school_data.json?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIA2SANCC6IV26VYMEG%2F20240716%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20240716T040140Z&X-Amz-Expires=600&X-Amz-Signature=e02f34103615f7dcc206c3afc8365ebfe9b58a00eb4c0200aa986bce58406cbd&X-Amz-SignedHeaders=host&x-id=GetObject
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: limit exceeds'
+                  value:
+                    id: api.files.generate-url
+                    ver: v1
+                    ts: '2024-07-16T08:33:04+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: d3a606ca-47d0-4746-95a1-c8692e749959
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: FILES_URL_GENERATION_LIMIT_EXCEED
+                      message: 'Pre-signed URL generation failed: limit exceeded.'
+                      trace: ''
+                example-1:
+                  summary: 'Failure: Invalid request'
+                  value:
+                    id: api.files.generate-url
+                    ver: v1
+                    ts: '2024-07-16T09:31:10+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: c3e9da1c-09f3-4a3b-84ec-a19efc68b856
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: FILES_GENERATE_URL_INPUT_INVALID
+                      message: >-
+                        #properties/request/properties/access/enum must be equal
+                        to one of the allowed values
+                      trace: ''
+  /dataset/v1/dataschema:
+    post:
+      tags:
+        - Dataset API's
+      summary: Data schema generator
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                data:
+                  - tripID: b97b0dbd-1463-4a42-99ff-211fc389464c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-12 00:22:30'
+                    tpep_dropoff_datetime: '2023-09-14 00:40:50'
+                    passenger_count: '2'
+                    trip_distance: '2.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '249'
+                    DOLocationID: '162'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Raquel.Kunde@gmail.com
+                      mobile: 310-255-4865 x1413
+                    fare_details:
+                      fare_amount: '13.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '14.8'
+                      congestion_surcharge: ''
+                  - tripID: a0520d95-1ae2-4d94-a6d2-0e35857e2b3c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-07-01 00:47:00'
+                    tpep_dropoff_datetime: '2024-01-25 00:52:18'
+                    passenger_count: '1'
+                    trip_distance: '1.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '140'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Willy15@gmail.com
+                      mobile: 474-817-2801 x633
+                    fare_details:
+                      fare_amount: '6'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.3'
+                      congestion_surcharge: ''
+                  - tripID: 6248522a-ffbb-4d73-8b89-75a0e5310f25
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-03-19 00:55:39'
+                    tpep_dropoff_datetime: '2023-03-16 01:03:06'
+                    passenger_count: '4'
+                    trip_distance: '1.90'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '140'
+                    DOLocationID: '162'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Agustina74@yahoo.com
+                      mobile: 1-533-609-5857 x24749
+                    fare_details:
+                      fare_amount: '8'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.3'
+                      congestion_surcharge: ''
+                  - tripID: 3502a658-1bf8-4d62-a180-f1560d088d36
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-06-02 00:28:37'
+                    tpep_dropoff_datetime: '2024-01-26 00:31:37'
+                    passenger_count: '1'
+                    trip_distance: '.76'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '142'
+                    DOLocationID: '239'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Shemar97@hotmail.com
+                      mobile: (738) 409-8443 x5839
+                    fare_details:
+                      fare_amount: '4.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.8'
+                      congestion_surcharge: ''
+                  - tripID: 245a42b8-be3f-49a7-b82b-755a60c0fe90
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-03-16 00:33:19'
+                    tpep_dropoff_datetime: '2023-06-17 00:46:44'
+                    passenger_count: '1'
+                    trip_distance: '3.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '239'
+                    DOLocationID: '68'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Alvis.Kshlerin77@hotmail.com
+                      mobile: 1-487-796-9469 x057
+                    fare_details:
+                      fare_amount: '13.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '16.8'
+                      congestion_surcharge: ''
+                  - tripID: 4e351ad9-b554-49fe-bdeb-351ced4a5fbc
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-05-11 00:59:05'
+                    tpep_dropoff_datetime: '2023-06-21 01:19:25'
+                    passenger_count: '2'
+                    trip_distance: '3.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '246'
+                    DOLocationID: '43'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Nicole.White@hotmail.com
+                      mobile: 687-578-1535 x50831
+                    fare_details:
+                      fare_amount: '16.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '17.8'
+                      congestion_surcharge: ''
+                  - tripID: 9f24c946-4f7d-4e2b-b0f0-34c11b61b97e
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-03-04 00:11:27'
+                    tpep_dropoff_datetime: '2024-01-14 00:46:29'
+                    passenger_count: '5'
+                    trip_distance: '21.42'
+                    RatecodeID: '2'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '132'
+                    DOLocationID: '87'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Talia.Denesik@hotmail.com
+                      mobile: 727-537-1685 x107
+                    fare_details:
+                      fare_amount: '52'
+                      extra: '0'
+                      mta_tax: '0.5'
+                      tip_amount: '11.71'
+                      tolls_amount: '5.76'
+                      improvement_surcharge: '0.3'
+                      total_amount: '70.27'
+                      congestion_surcharge: ''
+                  - tripID: 4622df23-a8f1-482f-9310-76d6fb772b9a
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-04-02 00:19:27'
+                    tpep_dropoff_datetime: '2023-03-06 01:03:21'
+                    passenger_count: '1'
+                    trip_distance: '10.84'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '114'
+                    DOLocationID: '198'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Alice43@gmail.com
+                      mobile: 579-402-1634 x87762
+                    fare_details:
+                      fare_amount: '37.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '38.8'
+                      congestion_surcharge: ''
+                  - tripID: 8f8211bf-9693-4b36-817f-d9c1c7253691
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-05-12 00:11:49'
+                    tpep_dropoff_datetime: '2023-02-28 00:23:07'
+                    passenger_count: '2'
+                    trip_distance: '3.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '161'
+                    DOLocationID: '41'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Mike88@gmail.com
+                      mobile: (501) 617-2020 x4697
+                    fare_details:
+                      fare_amount: '12.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.5'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '16.3'
+                      congestion_surcharge: ''
+                  - tripID: 6a102595-7db4-4184-bd80-ce249b784f0b
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-02 00:38:41'
+                    tpep_dropoff_datetime: '2024-02-01 01:08:52'
+                    passenger_count: '4'
+                    trip_distance: '3.20'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '161'
+                    DOLocationID: '249'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Vella.Armstrong71@gmail.com
+                      mobile: 978.794.7934 x32048
+                    fare_details:
+                      fare_amount: '18.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '19.8'
+                      congestion_surcharge: ''
+                  - tripID: ceced196-7da9-4bac-83ad-fe0129098574
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-02-20 00:14:19'
+                    tpep_dropoff_datetime: '2023-11-22 00:17:03'
+                    passenger_count: '2'
+                    trip_distance: '.78'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '236'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Keven_Kihn@hotmail.com
+                      mobile: 1-323-467-0737 x980
+                    fare_details:
+                      fare_amount: '4.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.16'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '6.96'
+                      congestion_surcharge: ''
+                  - tripID: 23a467f1-de9b-474f-a60a-3d103ebeba04
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-04-03 00:20:57'
+                    tpep_dropoff_datetime: '2023-11-12 00:30:01'
+                    passenger_count: '1'
+                    trip_distance: '1.71'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '142'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Kiera.Kling@hotmail.com
+                      mobile: 704-373-7606 x93095
+                    fare_details:
+                      fare_amount: '8.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.8'
+                      congestion_surcharge: ''
+                  - tripID: 15c7f4d7-fa74-41ee-98d5-7c00f30bb366
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-07-25 00:36:13'
+                    tpep_dropoff_datetime: '2023-08-19 00:46:08'
+                    passenger_count: '2'
+                    trip_distance: '2.28'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '43'
+                    DOLocationID: '151'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Laura_Lind99@hotmail.com
+                      mobile: (846) 893-6673 x69711
+                    fare_details:
+                      fare_amount: '9.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.16'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '12.96'
+                      congestion_surcharge: ''
+                  - tripID: 796dfa5d-e16d-49c9-b41c-f4223a8fedd9
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-08-14 00:56:36'
+                    tpep_dropoff_datetime: '2023-07-08 01:04:49'
+                    passenger_count: '2'
+                    trip_distance: '1.57'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '238'
+                    DOLocationID: '41'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Melvin68@yahoo.com
+                      mobile: 1-436-319-7744 x1743
+                    fare_details:
+                      fare_amount: '8'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.86'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '11.16'
+                      congestion_surcharge: ''
+                  - tripID: b8b56888-8bb4-4981-b669-2a56d563b25f
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-06-23 00:27:41'
+                    tpep_dropoff_datetime: '2024-02-12 00:42:43'
+                    passenger_count: '1'
+                    trip_distance: '2.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '113'
+                    DOLocationID: '229'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Mauricio8@gmail.com
+                      mobile: 1-298-756-7810 x0828
+                    fare_details:
+                      fare_amount: '12'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '13.3'
+                      congestion_surcharge: ''
+                  - tripID: 4f9c0e5e-1a8d-4e47-8e02-b5d3676162f2
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-09-30 00:46:37'
+                    tpep_dropoff_datetime: '2023-04-07 00:53:37'
+                    passenger_count: '1'
+                    trip_distance: '1.18'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '141'
+                    DOLocationID: '262'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Bailee.Roob80@gmail.com
+                      mobile: 753.766.7597 x58905
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.66'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.96'
+                      congestion_surcharge: ''
+                  - tripID: dc5fb067-ee76-4c74-8d53-913518d7de3c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-09-07 00:21:23'
+                    tpep_dropoff_datetime: '2023-08-14 00:26:07'
+                    passenger_count: '2'
+                    trip_distance: '.40'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '233'
+                    DOLocationID: '233'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Francisco70@yahoo.com
+                      mobile: 1-591-565-3358 x04096
+                    fare_details:
+                      fare_amount: '4.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '5.8'
+                      congestion_surcharge: ''
+                  - tripID: d1008fa4-1017-43e5-a7cd-7fcc235d82e5
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-13 00:49:45'
+                    tpep_dropoff_datetime: '2023-08-30 00:56:01'
+                    passenger_count: '1'
+                    trip_distance: '1.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '113'
+                    DOLocationID: '79'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Charity_Jacobs58@gmail.com
+                      mobile: 1-713-793-4442 x6226
+                    fare_details:
+                      fare_amount: '6'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.3'
+                      congestion_surcharge: ''
+                  - tripID: a4d907fa-cad9-41fa-a25f-cd3fac14d0d9
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-10-27 00:56:42'
+                    tpep_dropoff_datetime: '2023-03-23 01:26:09'
+                    passenger_count: '4'
+                    trip_distance: '6.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '79'
+                    DOLocationID: '75'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Bridie61@yahoo.com
+                      mobile: (632) 512-8857
+                    fare_details:
+                      fare_amount: '24'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '5.05'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '30.35'
+                      congestion_surcharge: ''
+                  - tripID: 28c84ea3-4129-4114-b0ee-7bb39cb9613f
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-03-07 00:10:50'
+                    tpep_dropoff_datetime: '2023-06-10 00:17:46'
+                    passenger_count: '5'
+                    trip_distance: '1.32'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '42'
+                    DOLocationID: '41'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Vickie.Franey93@gmail.com
+                      mobile: 874.663.4243
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: 1218ae38-7474-4a4b-9343-e3d0fe6da9c6
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-07-18 00:32:36'
+                    tpep_dropoff_datetime: '2023-06-16 00:54:08'
+                    passenger_count: '3'
+                    trip_distance: '3.65'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '43'
+                    DOLocationID: '224'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Alexandro.Prohaska40@hotmail.com
+                      mobile: (413) 378-0852 x100
+                    fare_details:
+                      fare_amount: '15.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '16.8'
+                      congestion_surcharge: ''
+                  - tripID: 0a5fc580-5a28-4153-b37f-a2ecc4ebc777
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-05-06 00:32:24'
+                    tpep_dropoff_datetime: '2023-11-29 00:33:21'
+                    passenger_count: '0'
+                    trip_distance: '5.30'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '50'
+                    DOLocationID: '50'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Veda_Stamm@hotmail.com
+                      mobile: 596-555-2936 x826
+                    fare_details:
+                      fare_amount: '2.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0.75'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '4.55'
+                      congestion_surcharge: ''
+                  - tripID: 89856e17-912a-40e6-8379-f1d75a066878
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-05-30 00:36:37'
+                    tpep_dropoff_datetime: '2024-02-14 00:42:40'
+                    passenger_count: '1'
+                    trip_distance: '1.40'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '50'
+                    DOLocationID: '239'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Jed60@hotmail.com
+                      mobile: (761) 368-4573
+                    fare_details:
+                      fare_amount: '6.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.55'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.35'
+                      congestion_surcharge: ''
+                  - tripID: fece3c74-e914-46c6-8b84-88470d9c7b3a
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-09-14 00:44:29'
+                    tpep_dropoff_datetime: '2023-03-22 00:48:05'
+                    passenger_count: '3'
+                    trip_distance: '.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '238'
+                    DOLocationID: '238'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Juwan_Schimmel@yahoo.com
+                      mobile: 1-725-659-7644
+                    fare_details:
+                      fare_amount: '4.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '5.8'
+                      congestion_surcharge: ''
+                  - tripID: 9142ffc4-db10-4faf-ad6a-b15595e02408
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-14 00:52:53'
+                    tpep_dropoff_datetime: '2023-09-29 01:27:03'
+                    passenger_count: '2'
+                    trip_distance: '14.40'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '238'
+                    DOLocationID: '98'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Pinkie13@hotmail.com
+                      mobile: (991) 905-4690
+                    fare_details:
+                      fare_amount: '42'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '5.76'
+                      improvement_surcharge: '0.3'
+                      total_amount: '49.06'
+                      congestion_surcharge: ''
+                  - tripID: ac62b151-e94c-473f-b461-c25f7035e8ac
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-08-01 00:28:12'
+                    tpep_dropoff_datetime: '2023-03-08 00:34:55'
+                    passenger_count: '1'
+                    trip_distance: '1.43'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '14'
+                    DOLocationID: '228'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Esteban_Ondricka@yahoo.com
+                      mobile: (697) 411-7922
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: 707e720d-afdd-4af9-9469-02fd5052ed9f
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-10-10 00:55:16'
+                    tpep_dropoff_datetime: '2023-03-25 01:01:05'
+                    passenger_count: '1'
+                    trip_distance: '1.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '11'
+                    DOLocationID: '22'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Kristin.Baumbach-Ferry@hotmail.com
+                      mobile: 964-998-1199
+                    fare_details:
+                      fare_amount: '6'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.3'
+                      congestion_surcharge: ''
+                  - tripID: e75c5819-6f52-4c57-a6ea-85b79935821b
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-07-11 00:29:10'
+                    tpep_dropoff_datetime: '2023-08-10 01:23:09'
+                    passenger_count: '2'
+                    trip_distance: '11.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '181'
+                    DOLocationID: '239'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Dorothea.Kulas@gmail.com
+                      mobile: 354.367.7954
+                    fare_details:
+                      fare_amount: '40'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '10.33'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '51.63'
+                      congestion_surcharge: ''
+                  - tripID: d8fc1a3c-3c56-4f21-94d2-f42a2e5e3a9d
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-01-12 00:20:30'
+                    tpep_dropoff_datetime: '2023-11-09 00:36:07'
+                    passenger_count: '1'
+                    trip_distance: '1.50'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '161'
+                    DOLocationID: '229'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Jazmyn_Corwin@gmail.com
+                      mobile: 642.790.7928 x83713
+                    fare_details:
+                      fare_amount: '10.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '11.8'
+                      congestion_surcharge: ''
+                  - tripID: 6eb24260-db4a-4a2f-a2bf-fbd0cfe0ffba
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-02-04 00:42:50'
+                    tpep_dropoff_datetime: '2024-03-03 00:51:48'
+                    passenger_count: '1'
+                    trip_distance: '.72'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '162'
+                    DOLocationID: '43'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Mazie18@hotmail.com
+                      mobile: 1-641-639-4170 x249
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: 18578bdf-e169-4d3d-ae08-b6320bb04e29
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-04-19 00:53:39'
+                    tpep_dropoff_datetime: '2023-05-12 00:51:48'
+                    passenger_count: '1'
+                    trip_distance: '2.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '43'
+                    DOLocationID: '137'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Maud.Collins@gmail.com
+                      mobile: 214.847.9872
+                    fare_details:
+                      fare_amount: '13'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.14'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '16.44'
+                      congestion_surcharge: ''
+                  - tripID: b44c85e8-ebd2-481f-a9d5-52124dec673a
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-02-25 00:16:33'
+                    tpep_dropoff_datetime: '2023-09-01 00:23:16'
+                    passenger_count: '1'
+                    trip_distance: '1.50'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '237'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Domenick_Pagac@yahoo.com
+                      mobile: 742.839.7610 x189
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.65'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.95'
+                      congestion_surcharge: ''
+                  - tripID: dc355724-1226-4dbf-ace7-f5c34e39b7e7
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-07-23 00:24:43'
+                    tpep_dropoff_datetime: '2023-06-26 00:30:13'
+                    passenger_count: '1'
+                    trip_distance: '1.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '237'
+                    DOLocationID: '140'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Kathryne1@yahoo.com
+                      mobile: (900) 624-9537
+                    fare_details:
+                      fare_amount: '6'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.3'
+                      congestion_surcharge: ''
+                  - tripID: e65bc848-a894-4fb7-b889-dd7d812ab793
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-01 00:34:18'
+                    tpep_dropoff_datetime: '2023-10-11 00:38:47'
+                    passenger_count: '1'
+                    trip_distance: '.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '140'
+                    DOLocationID: '237'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Hilton.Jacobi@gmail.com
+                      mobile: 1-637-451-2136
+                    fare_details:
+                      fare_amount: '5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.25'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.55'
+                      congestion_surcharge: ''
+                  - tripID: 32bf8dee-cd36-4c9e-befb-be32256653e0
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-01 00:39:55'
+                    tpep_dropoff_datetime: '2023-03-31 00:51:01'
+                    passenger_count: '1'
+                    trip_distance: '1.90'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '237'
+                    DOLocationID: '238'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Ole.Lindgren@hotmail.com
+                      mobile: (728) 501-8337 x72810
+                    fare_details:
+                      fare_amount: '9.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '3.2'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '14'
+                      congestion_surcharge: ''
+                  - tripID: 1e7bc9a0-ccc6-4855-8650-a46e8695c1a2
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-24 00:52:47'
+                    tpep_dropoff_datetime: '2023-12-12 00:59:52'
+                    passenger_count: '1'
+                    trip_distance: '1.90'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '238'
+                    DOLocationID: '237'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Jazmin.Pollich-Little81@gmail.com
+                      mobile: 517-815-1765
+                    fare_details:
+                      fare_amount: '8'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.85'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '11.15'
+                      congestion_surcharge: ''
+                  - tripID: b81e5976-6581-4cad-914d-b1bf3a007c7b
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-24 00:24:43'
+                    tpep_dropoff_datetime: '2023-05-19 00:37:30'
+                    passenger_count: '1'
+                    trip_distance: '1.30'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '162'
+                    DOLocationID: '107'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Jake_Heidenreich52@gmail.com
+                      mobile: 300-566-1457 x9243
+                    fare_details:
+                      fare_amount: '9.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.15'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '12.95'
+                      congestion_surcharge: ''
+                  - tripID: beae8765-a627-4af7-ac5b-a5ba96f6d54f
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-29 00:47:22'
+                    tpep_dropoff_datetime: '2023-10-17 00:55:16'
+                    passenger_count: '1'
+                    trip_distance: '.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '107'
+                    DOLocationID: '79'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Mitchell.Green64@hotmail.com
+                      mobile: 1-279-558-0312 x75465
+                    fare_details:
+                      fare_amount: '6.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.55'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.35'
+                      congestion_surcharge: ''
+                  - tripID: a59b934c-583c-4fa3-a5cb-15041379e8da
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-09-17 00:59:36'
+                    tpep_dropoff_datetime: '2023-09-12 01:28:32'
+                    passenger_count: '1'
+                    trip_distance: '3.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '113'
+                    DOLocationID: '142'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Esther.Hintz@hotmail.com
+                      mobile: 546-446-7171 x1903
+                    fare_details:
+                      fare_amount: '19.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '4.15'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '24.95'
+                      congestion_surcharge: ''
+                  - tripID: 7ed9ad81-42cb-436e-93c5-d88d7245493f
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-29 00:18:04'
+                    tpep_dropoff_datetime: '2023-10-04 00:25:32'
+                    passenger_count: '1'
+                    trip_distance: '1.30'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '161'
+                    DOLocationID: '137'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Carolanne_Buckridge@gmail.com
+                      mobile: (972) 507-5995 x716
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: 4c325355-2689-482f-8107-ece7515ddc33
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-17 00:40:33'
+                    tpep_dropoff_datetime: '2023-03-17 00:44:25'
+                    passenger_count: '2'
+                    trip_distance: '.40'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '164'
+                    DOLocationID: '170'
+                    payment_type: '4'
+                    primary_passenger:
+                      email: Willie.Zieme44@hotmail.com
+                      mobile: 813.930.8291 x27037
+                    fare_details:
+                      fare_amount: '4.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '5.8'
+                      congestion_surcharge: ''
+                  - tripID: 5e153af5-1e69-4acc-bd70-25b7d6e9856a
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-09-23 00:59:13'
+                    tpep_dropoff_datetime: '2023-10-21 01:01:44'
+                    passenger_count: '6'
+                    trip_distance: '.50'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '161'
+                    DOLocationID: '161'
+                    payment_type: '3'
+                    primary_passenger:
+                      email: Abe.Kassulke5@yahoo.com
+                      mobile: 1-994-727-5845 x8326
+                    fare_details:
+                      fare_amount: '4'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '5.3'
+                      congestion_surcharge: ''
+                  - tripID: eef4af05-c391-4a67-9ed9-0a6a2c23645c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-03-11 00:10:40'
+                    tpep_dropoff_datetime: '2023-03-16 00:27:11'
+                    passenger_count: '2'
+                    trip_distance: '4.30'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '229'
+                    DOLocationID: '223'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Clifford.Fisher@yahoo.com
+                      mobile: 1-934-478-8531 x33207
+                    fare_details:
+                      fare_amount: '16'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '17.3'
+                      congestion_surcharge: ''
+                  - tripID: a790d399-dbbc-4483-805b-0fb001b6c6b7
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-06-27 00:25:03'
+                    tpep_dropoff_datetime: '2024-03-07 01:02:07'
+                    passenger_count: '6'
+                    trip_distance: '3.58'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '211'
+                    DOLocationID: '48'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Carson.Hartmann-Lynch59@gmail.com
+                      mobile: (856) 507-5220 x738
+                    fare_details:
+                      fare_amount: '23'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '24.3'
+                      congestion_surcharge: ''
+                  - tripID: 10fb7db8-edee-4686-95e7-d07a17761fe9
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-17 00:26:54'
+                    tpep_dropoff_datetime: '2023-08-06 00:49:47'
+                    passenger_count: '2'
+                    trip_distance: '2.10'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '158'
+                    DOLocationID: '107'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Brandyn.Powlowski43@yahoo.com
+                      mobile: (972) 869-2846
+                    fare_details:
+                      fare_amount: '14.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '15.8'
+                      congestion_surcharge: ''
+                  - tripID: b575d34f-8874-4b67-8918-293cccec8558
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-03-04 00:18:00'
+                    tpep_dropoff_datetime: '2023-11-02 00:26:10'
+                    passenger_count: '1'
+                    trip_distance: '1.11'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '13'
+                    DOLocationID: '231'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Lelia71@hotmail.com
+                      mobile: 298-955-0204 x145
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: 4524ce02-c41d-4e83-82a1-e41b00d97dab
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-01-25 00:33:25'
+                    tpep_dropoff_datetime: '2023-10-29 01:07:18'
+                    passenger_count: '1'
+                    trip_distance: '5.63'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '113'
+                    DOLocationID: '238'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Magali_Mohr90@gmail.com
+                      mobile: 1-339-745-7996 x126
+                    fare_details:
+                      fare_amount: '24'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '5.06'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '30.36'
+                      congestion_surcharge: ''
+                  - tripID: 0a4d6094-f334-4e18-a1e9-1001820b6f89
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-01-26 00:11:00'
+                    tpep_dropoff_datetime: '2023-08-01 00:15:28'
+                    passenger_count: '1'
+                    trip_distance: '.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '79'
+                    DOLocationID: '79'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Sydney.Sanford71@yahoo.com
+                      mobile: 557.212.3262 x589
+                    fare_details:
+                      fare_amount: '5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.26'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '7.56'
+                      congestion_surcharge: ''
+                  - tripID: 9245af5e-632e-4f21-9060-88522728ab73
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-09-07 00:17:57'
+                    tpep_dropoff_datetime: '2023-09-14 00:27:43'
+                    passenger_count: '1'
+                    trip_distance: '3.70'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '107'
+                    DOLocationID: '87'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Deanna15@hotmail.com
+                      mobile: 927-327-6309 x16689
+                    fare_details:
+                      fare_amount: '13'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.85'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '17.15'
+                      congestion_surcharge: ''
+                  - tripID: 4dcce454-046c-4b67-bd80-ff773a3c3d96
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-16 00:35:11'
+                    tpep_dropoff_datetime: '2023-05-07 00:58:40'
+                    passenger_count: '1'
+                    trip_distance: '5.40'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '261'
+                    DOLocationID: '142'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Jeramie33@yahoo.com
+                      mobile: 757-419-8948 x7985
+                    fare_details:
+                      fare_amount: '20.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '5.45'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '27.25'
+                      congestion_surcharge: ''
+                  - tripID: d5808aed-5e8e-447f-8c42-521f8472a24d
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-01-23 00:12:48'
+                    tpep_dropoff_datetime: '2023-07-16 00:23:48'
+                    passenger_count: '1'
+                    trip_distance: '1.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '211'
+                    DOLocationID: '232'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Jarrod_Bergstrom@hotmail.com
+                      mobile: 388-916-2388 x911
+                    fare_details:
+                      fare_amount: '9.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '10.8'
+                      congestion_surcharge: ''
+                  - tripID: faf99a1d-127f-432a-bdb9-39c91a205ec3
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-08-12 00:31:53'
+                    tpep_dropoff_datetime: '2023-09-30 00:47:26'
+                    passenger_count: '1'
+                    trip_distance: '2.10'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '79'
+                    DOLocationID: '164'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: America72@gmail.com
+                      mobile: 528-291-8014 x700
+                    fare_details:
+                      fare_amount: '11.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2.55'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '15.35'
+                      congestion_surcharge: ''
+                  - tripID: 21b8ea90-d3ab-4fe6-890e-2b8a911500e1
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-05 00:54:38'
+                    tpep_dropoff_datetime: '2023-08-23 01:01:13'
+                    passenger_count: '1'
+                    trip_distance: '1.00'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '107'
+                    DOLocationID: '170'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Autumn_Kerluke@hotmail.com
+                      mobile: 542.726.7058
+                    fare_details:
+                      fare_amount: '6.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.8'
+                      congestion_surcharge: ''
+                  - tripID: 080446ad-cf54-429f-82e2-e54f4f8d4a9c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-07-16 00:00:58'
+                    tpep_dropoff_datetime: '2023-10-29 00:06:38'
+                    passenger_count: '1'
+                    trip_distance: '.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '148'
+                    DOLocationID: '79'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Reanna_Conroy-Ratke@gmail.com
+                      mobile: (565) 628-3638
+                    fare_details:
+                      fare_amount: '5.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '2'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.8'
+                      congestion_surcharge: ''
+                  - tripID: 5ec8c804-9d6c-436b-be68-da3fa2ffcc8e
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-03-08 00:14:58'
+                    tpep_dropoff_datetime: '2024-02-09 00:24:33'
+                    passenger_count: '1'
+                    trip_distance: '2.70'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '4'
+                    DOLocationID: '87'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Randi0@yahoo.com
+                      mobile: (248) 538-4300 x71383
+                    fare_details:
+                      fare_amount: '11'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '13.3'
+                      congestion_surcharge: ''
+                  - tripID: 3f59b9fa-e8da-4b82-ac19-3b4d5cae65e8
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-07-01 00:31:12'
+                    tpep_dropoff_datetime: '2023-09-29 00:38:08'
+                    passenger_count: '1'
+                    trip_distance: '.70'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'Y'
+                    PULocationID: '148'
+                    DOLocationID: '148'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Ethyl74@yahoo.com
+                      mobile: 292-960-2200 x317
+                    fare_details:
+                      fare_amount: '6'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.8'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.1'
+                      congestion_surcharge: ''
+                  - tripID: dec9470a-6baa-492e-9220-d7ed626e2a99
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-22 00:43:21'
+                    tpep_dropoff_datetime: '2024-03-02 00:50:49'
+                    passenger_count: '1'
+                    trip_distance: '1.10'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '79'
+                    DOLocationID: '231'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Makayla_Schneider18@hotmail.com
+                      mobile: 1-885-537-0198 x47953
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.3'
+                      congestion_surcharge: ''
+                  - tripID: 904d9b1f-1f17-4cfc-8e63-8bf57257da5e
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-29 00:54:14'
+                    tpep_dropoff_datetime: '2023-05-03 01:02:32'
+                    passenger_count: '1'
+                    trip_distance: '1.50'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '231'
+                    DOLocationID: '158'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Cora.Grimes@yahoo.com
+                      mobile: 843.706.7413
+                    fare_details:
+                      fare_amount: '7.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.8'
+                      congestion_surcharge: ''
+                  - tripID: 57d8ed83-afa7-44cb-a0d4-723775602c34
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2024-02-02 00:16:34'
+                    tpep_dropoff_datetime: '2023-09-11 00:24:45'
+                    passenger_count: '2'
+                    trip_distance: '1.20'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '142'
+                    DOLocationID: '237'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Tate.Bins@hotmail.com
+                      mobile: (606) 682-9953 x671
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                  - tripID: fff2f2c8-4a30-446c-90af-443dd493886c
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-12-03 00:29:04'
+                    tpep_dropoff_datetime: '2023-07-26 00:36:33'
+                    passenger_count: '2'
+                    trip_distance: '1.90'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '237'
+                    DOLocationID: '262'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Magnus.Jacobs@hotmail.com
+                      mobile: (955) 449-9284 x00149
+                    fare_details:
+                      fare_amount: '8'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.85'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '11.15'
+                      congestion_surcharge: ''
+                  - tripID: 004c4cc7-e809-4108-aa01-87b0ded794ad
+                    VendorID: '1'
+                    tpep_pickup_datetime: '2023-05-18 00:41:00'
+                    tpep_dropoff_datetime: '2023-08-05 00:59:50'
+                    passenger_count: '1'
+                    trip_distance: '5.80'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '244'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Palma24@gmail.com
+                      mobile: 1-861-673-8247 x142
+                    fare_details:
+                      fare_amount: '20'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '21.3'
+                      congestion_surcharge: ''
+                  - tripID: 1a01450d-537f-4f16-a2e9-f17021b077e9
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2024-01-31 00:20:53'
+                    tpep_dropoff_datetime: '2023-12-21 00:40:21'
+                    passenger_count: '2'
+                    trip_distance: '5.70'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '164'
+                    DOLocationID: '255'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Jeffry18@gmail.com
+                      mobile: (206) 748-5730 x64895
+                    fare_details:
+                      fare_amount: '19.5'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '5.76'
+                      improvement_surcharge: '0.3'
+                      total_amount: '26.56'
+                      congestion_surcharge: ''
+                  - tripID: 5bccfd17-7813-43ca-9917-f2fe6ad49261
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-04-25 00:06:30'
+                    tpep_dropoff_datetime: '2023-10-31 00:08:31'
+                    passenger_count: '1'
+                    trip_distance: '.46'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '239'
+                    DOLocationID: '239'
+                    payment_type: '1'
+                    primary_passenger:
+                      email: Leanne.Swaniawski@gmail.com
+                      mobile: (787) 969-9302 x2684
+                    fare_details:
+                      fare_amount: '4'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '1.59'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '6.89'
+                      congestion_surcharge: ''
+                  - tripID: e613b176-be28-4414-9a40-cff61e46db3b
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-08-13 00:09:35'
+                    tpep_dropoff_datetime: '2023-04-01 00:17:05'
+                    passenger_count: '1'
+                    trip_distance: '1.72'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '239'
+                    DOLocationID: '236'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Michel_Watsica63@yahoo.com
+                      mobile: 793.751.7397 x892
+                    fare_details:
+                      fare_amount: '8'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '9.3'
+                      congestion_surcharge: ''
+                  - tripID: 02e07922-e8a5-4655-84a8-b5ba1866f9fe
+                    VendorID: '2'
+                    tpep_pickup_datetime: '2023-04-28 00:18:42'
+                    tpep_dropoff_datetime: '2024-02-15 00:24:38'
+                    passenger_count: '1'
+                    trip_distance: '1.60'
+                    RatecodeID: '1'
+                    store_and_fwd_flag: 'N'
+                    PULocationID: '236'
+                    DOLocationID: '239'
+                    payment_type: '2'
+                    primary_passenger:
+                      email: Dewayne_Kuvalis17@gmail.com
+                      mobile: 1-429-628-3797 x14211
+                    fare_details:
+                      fare_amount: '7'
+                      extra: '0.5'
+                      mta_tax: '0.5'
+                      tip_amount: '0'
+                      tolls_amount: '0'
+                      improvement_surcharge: '0.3'
+                      total_amount: '8.3'
+                      congestion_surcharge: ''
+                config:
+                  dataset: generate-schema
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: dataset.schema.identify
+                ver: v1
+                ts: 1721100502574
+                params:
+                  status: SUCCESS
+                  errmsg: ''
+                responseCode: OK
+                result:
+                  schema:
+                    $schema: https://json-schema.org/draft/2020-12/schema
+                    type: object
+                    properties:
+                      tripID:
+                        type: string
+                        suggestions:
+                          - message: >-
+                              The Property 'tripID' appears to be 'uuid' format
+                              type.
+                            advice: Suggest to not to index the high cardinal columns
+                            resolutionType: DEDUP
+                            severity: LOW
+                            path: properties.tripID
+                        arrival_format: text
+                        data_type: string
+                      VendorID:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      tpep_pickup_datetime:
+                        type: string
+                        suggestions:
+                          - message: >-
+                              The Property 'tpep_pickup_datetime' appears to be
+                              'date-time' format type.
+                            advice: The System can index all data on this column
+                            resolutionType: INDEX
+                            severity: LOW
+                            path: properties.tpep_pickup_datetime
+                        arrival_format: text
+                        data_type: date-time
+                      tpep_dropoff_datetime:
+                        type: string
+                        suggestions:
+                          - message: >-
+                              The Property 'tpep_dropoff_datetime' appears to be
+                              'date-time' format type.
+                            advice: The System can index all data on this column
+                            resolutionType: INDEX
+                            severity: LOW
+                            path: properties.tpep_dropoff_datetime
+                        arrival_format: text
+                        data_type: date-time
+                      passenger_count:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      trip_distance:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      RatecodeID:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      store_and_fwd_flag:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      PULocationID:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      DOLocationID:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      payment_type:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      primary_passenger:
+                        type: object
+                        properties:
+                          email:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          mobile:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                        arrival_format: object
+                        data_type: object
+                      fare_details:
+                        type: object
+                        properties:
+                          fare_amount:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          extra:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          mta_tax:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          tip_amount:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          tolls_amount:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          improvement_surcharge:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          total_amount:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          congestion_surcharge:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                        arrival_format: object
+                        data_type: object
+                    additionalProperties: true
+                  configurations:
+                    indexConfiguration:
+                      index:
+                        Event Arrival Time: obsrv_meta.syncts
+                      rollupSuggestions:
+                        summary:
+                          tripID:
+                            path: $.tripID
+                            cardinality: 98
+                            index: false
+                    processing:
+                      dedupKeys:
+                        - tripID
+                      dropDuplicates:
+                        - 'Yes'
+                        - 'No'
+                  dataMappings:
+                    text:
+                      arrival_format:
+                        - string
+                      store_format:
+                        string:
+                          jsonSchema: string
+                          datasource: string
+                        date-time:
+                          jsonSchema: string
+                          datasource: string
+                        date:
+                          jsonSchema: string
+                          datasource: string
+                        boolean:
+                          jsonSchema: string
+                          datasource: boolean
+                        epoch:
+                          jsonSchema: string
+                          datasource: integer
+                        long:
+                          jsonSchema: string
+                          datasource: long
+                        double:
+                          jsonSchema: string
+                          datasource: double
+                        bigdecimal:
+                          jsonSchema: string
+                          datasource: double
+                        integer:
+                          jsonSchema: string
+                          datasource: long
+                    number:
+                      arrival_format:
+                        - number
+                        - integer
+                      store_format:
+                        integer:
+                          jsonSchema: integer
+                          datasource: long
+                        float:
+                          jsonSchema: number
+                          datasource: double
+                        long:
+                          jsonSchema: integer
+                          datasource: long
+                        double:
+                          jsonSchema: number
+                          datasource: double
+                        bigdecimal:
+                          jsonSchema: number
+                          datasource: double
+                        epoch:
+                          jsonSchema: integer
+                          datasource: long
+                        number:
+                          jsonSchema: number
+                          datasource: double
+                    object:
+                      arrival_format:
+                        - object
+                      store_format:
+                        object:
+                          jsonSchema: object
+                          datasource: json
+                    array:
+                      arrival_format:
+                        - array
+                      store_format:
+                        array:
+                          jsonSchema: array
+                          datasource: array
+                    boolean:
+                      arrival_format:
+                        - boolean
+                      store_format:
+                        boolean:
+                          jsonSchema: boolean
+                          datasource: boolean

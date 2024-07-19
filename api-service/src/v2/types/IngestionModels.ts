@@ -50,3 +50,15 @@ export interface IngestionSchemeRequest {
     schema: Map<string, any>[],
     config: IngestionConfig
 }
+
+export interface RollupInfo {
+    summary?: RollupSuggestionsSummary;
+}
+
+interface RollupSuggestionsSummary {
+    [key: string]: {
+        path: string;
+        cardinality: number;
+        index: boolean;
+    };
+}

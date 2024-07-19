@@ -1,3 +1,6 @@
+import { IngestionConfig } from "./IngestionModels";
+import { IDataSourceRules, IRules } from "./QueryModels";
+
 export interface ExtractionConfig {
   is_batch_event: boolean;
   extraction_key: string;
@@ -41,4 +44,17 @@ export interface DatasetConfig {
   redis_db: number;
   index_data: boolean;
 }
+export interface DataSetConfig {
+  querying: IDataSourceRules
+  indexConfiguration: IngestionConfig,
+  processing: DatasetProcessing
+}
 
+export interface DatasetProcessing {
+  topic: string;
+  extraction: ExtractionConfig;
+  dedup_config: DedupConfig;
+  validation_config: ValidationConfig;
+  denorm_config: DenormConfig;
+  router_config: RouterConfig;
+}

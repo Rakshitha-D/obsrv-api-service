@@ -20,6 +20,7 @@ import { eventValidation } from "../controllers/EventValidation/EventValidation"
 import GenerateSignedURL from "../controllers/GenerateSignedURL/GenerateSignedURL";
 import { sqlQuery } from "../controllers/QueryWrapper/SqlQueryWrapper";
 import DatasetStatusTansition from "../controllers/DatasetStatusTransition/DatasetStatusTransition";
+import DataSchemaGenerator from "../controllers/GenerateDataSchema/GenerateDataSchema";
 
 export const router = express.Router();
 
@@ -39,6 +40,7 @@ router.post("/schema/validate", setDataToRequestObject("api.schema.validator"), 
 router.post("/template/query/:templateId", setDataToRequestObject("api.query.template.query"), queryTemplate);
 router.post("/files/generate-url", setDataToRequestObject("api.files.generate-url"), onRequest({ entity: Entity.Management }), GenerateSignedURL);
 router.post("/datasets/status-transition", setDataToRequestObject("api.datasets.status-transition"), onRequest({ entity: Entity.Management }), DatasetStatusTansition);
+router.post("/datasets/dataschema", setDataToRequestObject("api.datasets.dataschema"), onRequest({ entity: Entity.Management }), DataSchemaGenerator);
 
 //Wrapper Service
 router.post("/obsrv/data/sql-query", setDataToRequestObject("api.obsrv.data.sql-query"), onRequest({ entity: Entity.Data_out }), sqlQuery);
