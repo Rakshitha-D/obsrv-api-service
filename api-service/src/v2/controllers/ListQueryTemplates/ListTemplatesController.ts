@@ -5,31 +5,27 @@ import { ResponseHandler } from "../../helpers/ResponseHandler";
 import { schemaValidation } from "../../services/ValidationService";
 import validationSchema from "./ListTemplateValidationSchema.json";
 import { QueryTemplate } from "../../models/QueryTemplate";
+import { obsrvError } from "../../types/ObsrvError";
 const apiId = "api.query.template.list";
 
+const validateRequest = (req: Request) => {
+    const isValidSchema = schemaValidation(req.body, validationSchema);
+    if (!isValidSchema?.isValid) {
+        throw obsrvError("", "QUERY_TEMPLATE_INVALID_INPUT", isValidSchema?.message, "BAD_REQUEST", 400)
+    }
+}
+
 export const listQueryTemplates = async (req: Request, res: Response) => {
-    const requestBody = req.body;
-    try {
-        const msgid = _.get(req, "body.params.msgid");
-        const resmsgid = _.get(res, "resmsgid");
-        const isValidSchema = schemaValidation(requestBody, validationSchema);
 
-        if (!isValidSchema?.isValid) {
-            logger.error({ apiId, msgid, resmsgid, requestBody, message: isValidSchema?.message, code: "QUERY_TEMPLATE_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ message: isValidSchema?.message, statusCode: 400, errCode: "BAD_REQUEST", code: "QUERY_TEMPLATE_INVALID_INPUT" }, req, res);
-        }
+    validateRequest(req);
+    const requestBody = req.body;    
+    let templateData = await getTemplateList(requestBody.request);
+    templateData = _.map(templateData, (data: any) => {
+        return data?.dataValues
+    })
+    logger.info({ apiId, requestBody, message: `Templates are listed successfully` })
+    return ResponseHandler.successResponse(req, res, { status: 200, data: templateData });
 
-        let templateData = await getTemplateList(requestBody.request);
-        templateData = _.map(templateData, (data: any) => {
-            return data?.dataValues
-        })
-        logger.info({ apiId, msgid, resmsgid, requestBody, message: `Templates are listed successfully` })
-        return ResponseHandler.successResponse(req, res, { status: 200, data: templateData });
-    }
-    catch (error) {
-        logger.error({ error, apiId, resmsgid: _.get(res, "resmsgid"), requestBody, code: "QUERY_TEMPLATE_LIST_FAILED", message: "Failed to list query templates" })
-        ResponseHandler.errorResponse({ code: "QUERY_TEMPLATE_LIST_FAILED", message: "Failed to list query templates" }, req, res);
-    }
 }
 
 const getTemplateList = async (req: Record<string, any>) => {

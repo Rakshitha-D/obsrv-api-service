@@ -5,59 +5,40 @@ import { schemaValidation } from "../../services/ValidationService";
 import { ResponseHandler } from "../../helpers/ResponseHandler";
 import { send } from "../../connections/kafkaConnection";
 import { datasetService } from "../../services/DatasetService";
-import logger from "../../logger";
 import { config } from "../../configs/Config";
+import { obsrvError } from "../../types/ObsrvError";
 
-const errorObject = {
-    datasetNotFound: {
-        "message": "Dataset with id not found",
-        "statusCode": 404,
-        "errCode": "BAD_REQUEST",
-        "code": "DATASET_NOT_FOUND"
-    },
-    topicNotFound: {
-        "message": "Entry topic is not defined",
-        "statusCode": 404,
-        "errCode": "BAD_REQUEST",
-        "code": "TOPIC_NOT_FOUND"
+const validateRequest = (req: Request) => {
+    const isValidSchema = schemaValidation(req.body, validationSchema)
+    if (!isValidSchema?.isValid) {
+        throw obsrvError("", "DATA_INGESTION_INVALID_INPUT", isValidSchema?.message, "BAD_REQUEST", 400)
     }
 }
-const apiId = "api.data.in";
-const errorCode = "DATASET_UPDATE_FAILURE"
+
+const validateDataset = async (datasetId: string) => {
+
+    const dataset = await datasetService.getDataset(datasetId, ["id"], true)
+    if (!dataset) {
+        throw obsrvError("", "DATASET_NOT_FOUND", `Dataset with id ${datasetId} not found.`, "NOT_FOUND", 404)
+    }
+
+    const entryTopic = _.get(dataset, "dataValues.dataset_config.entry_topic")
+    if (!entryTopic) {
+        throw obsrvError("", "TOPIC_NOT_FOUND", "Entry topic not found", "NOT_FOUND", 404)
+    }
+
+    return dataset
+}
 
 const dataIn = async (req: Request, res: Response) => {
-    try {
-        const requestBody = req.body;
-        const datasetId = req.params.datasetId.trim();
-        
-        const isValidSchema = schemaValidation(requestBody, validationSchema)
-        if (!isValidSchema?.isValid) {
-            logger.error({ apiId, message: isValidSchema?.message, code: "DATA_INGESTION_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ message: isValidSchema?.message, statusCode: 400, errCode: "BAD_REQUEST", code: "DATA_INGESTION_INVALID_INPUT" }, req, res);
-        }
-        const dataset = await datasetService.getDataset(datasetId, ["id"], true)
-        if (!dataset) {
-            logger.error({ apiId, message: `Dataset with id ${datasetId} not found in live table`, code: "DATASET_NOT_FOUND" })
-            return ResponseHandler.errorResponse(errorObject.datasetNotFound, req, res);
-        }
-        const entryTopic = _.get(dataset, "dataValues.dataset_config.entry_topic")
-        if (!entryTopic) {
-            logger.error({ apiId, message: "Entry topic not found", code: "TOPIC_NOT_FOUND" })
-            return ResponseHandler.errorResponse(errorObject.topicNotFound, req, res);
-        }
-        await send(addMetadataToEvents(datasetId, requestBody), _.get(dataset, "dataValues.dataset_config.entry_topic"))
-        ResponseHandler.successResponse(req, res, { status: 200, data: { message: "Data ingested successfully" } });
-    }
-    catch (err: any) {
-        const code = _.get(err, "code") || errorCode
-        logger.error({ ...err, apiId, code })
-        let errorMessage = err;
-        const statusCode = _.get(err, "statusCode")
-        if (!statusCode || statusCode == 500) {
-            errorMessage = { code: "DATA_INGESTION_FAILED", message: "Failed to ingest data" }
-        }
-        ResponseHandler.errorResponse(errorMessage, req, res);
-    }
+
+    validateRequest(req);
+    const requestBody = req.body;
+    const datasetId = req.params.datasetId.trim();
+    const dataset = await validateDataset(datasetId)
+    await send(addMetadataToEvents(datasetId, requestBody), _.get(dataset, "dataValues.dataset_config.entry_topic"))
+    ResponseHandler.successResponse(req, res, { status: 200, data: { message: "Data ingested successfully" } });
+
 }
 
 const addMetadataToEvents = (datasetId: string, payload: any) => {

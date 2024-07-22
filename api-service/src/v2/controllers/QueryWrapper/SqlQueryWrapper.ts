@@ -3,38 +3,26 @@ import _ from "lodash";
 import { config } from "../../configs/Config";
 import logger from "../../logger";
 import { ResponseHandler } from "../../helpers/ResponseHandler";
-import { ErrorObject } from "../../types/ResponseModel";
 import { druidHttpService } from "../../connections/druidConnection";
+import { obsrvError } from "../../types/ObsrvError";
 
 const apiId = "api.obsrv.data.sql-query";
-const errorCode = "SQL_QUERY_FAILURE"
+
+const validateRequest = (req: Request) => {
+    if (_.isEmpty(req.body)) {
+        throw obsrvError("", "SQL_QUERY_EMPTY_REQUEST", `Failed to query. Invalid request`, "BAD_REQUEST", 400)
+    }
+}
 
 export const sqlQuery = async (req: Request, res: Response) => {
-    const resmsgid = _.get(res, "resmsgid");
-    try {
-        const authorization = _.get(req, ["headers", "authorization"]);
 
-        if (_.isEmpty(req.body)) {
-            const emptyBodyCode = "SQL_QUERY_EMPTY_REQUEST"
-            logger.error({ code: emptyBodyCode, apiId, resmsgid, message: "Failed to query as request body is empty" })
-            return ResponseHandler.errorResponse({
-                code: emptyBodyCode,
-                message: "Failed to query. Invalid request",
-                statusCode: 400,
-                errCode: "BAD_REQUEST"
-            } as ErrorObject, req, res);
-        }
+    validateRequest(req)
+    const authorization = _.get(req, ["headers", "authorization"]);
+    const result = await druidHttpService.post(`${config.query_api.druid.sql_query_path}`, req.body, {
+        headers: { Authorization: authorization },
+    });
 
-        const result = await druidHttpService.post(`${config.query_api.druid.sql_query_path}`, req.body, {
-            headers: { Authorization: authorization },
-        });
+    logger.info({ message: "Successfully fetched data using sql query", apiId })
+    ResponseHandler.flatResponse(req, res, result)
 
-        logger.info({ messsge: "Successfully fetched data using sql query", apiId, resmsgid })
-        ResponseHandler.flatResponse(req, res, result)
-    } catch (error: any) {
-        const code = _.get(error, "code") || errorCode
-        const errorMessage = { message: _.get(error, "message") || "Failed to query to druid", code }
-        logger.error(error, apiId, code, resmsgid)
-        ResponseHandler.errorResponse(errorMessage, req, res);
-    }
 }

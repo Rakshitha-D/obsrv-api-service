@@ -9,52 +9,44 @@ import { validateTemplate } from "./QueryTemplateValidator";
 import { QueryTemplate } from "../../models/QueryTemplate";
 import slug from "slug";
 import { config } from "../../configs/Config";
+import { obsrvError } from "../../types/ObsrvError";
 const apiId = "api.query.template.create";
 const requiredVariables = _.get(config, "template_config.template_required_variables");
 
+const validateRequest = (req: Request) => {
+    const isValidSchema = schemaValidation(req.body, validationSchema);
+    if (!isValidSchema?.isValid) {
+        if (_.includes(isValidSchema.message, "template_name")) {
+            _.set(isValidSchema, "message", "Template name should contain alphanumeric characters and single space between characters")
+        }
+        throw obsrvError("", "QUERY_TEMPLATE_INVALID_INPUT", isValidSchema?.message, "BAD_REQUEST", 400)
+    }
+}
+
+const validateTemplateExists = async (req: Request, templateName: string, templateId: string) => {
+    const isTemplateExists = await getQueryTemplate(templateId)
+    if (isTemplateExists !== null) {
+        throw obsrvError("", "QUERY_TEMPLATE_ALREADY_EXISTS", `Template ${templateName} already exists`, "CONFLICT", 409)
+    }
+
+    const { validTemplate } = await validateTemplate(req.body);
+    if (!validTemplate) {
+        throw obsrvError("", "QUERY_TEMPLATE_INVALID_INPUT", `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, "BAD_REQUEST", 400)
+    }
+}
+
 export const createQueryTemplate = async (req: Request, res: Response) => {
-    try {
-        const msgid = _.get(req, "body.params.msgid");
-        const resmsgid = _.get(res, "resmsgid");
-        const templateName = _.get(req, "body.request.template_name");
-        const templateId: string = slug(templateName, "_");
-        const requestBody = req.body;
-        const isValidSchema = schemaValidation(requestBody, validationSchema);
 
-        if (!isValidSchema?.isValid) {
-            if (_.includes(isValidSchema.message, "template_name")) {
-                _.set(isValidSchema, "message", "Template name should contain alphanumeric characters and single space between characters")
-            }
-            logger.error({ apiId, msgid, resmsgid, requestBody: req?.body, message: isValidSchema?.message, code: "QUERY_TEMPLATE_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ message: isValidSchema?.message, statusCode: 400, errCode: "BAD_REQUEST", code: "QUERY_TEMPLATE_INVALID_INPUT" }, req, res);
-        }
+    validateRequest(req)
+    const templateName = _.get(req, "body.request.template_name");
+    const templateId: string = slug(templateName, "_");
 
-        const isTemplateExists = await getQueryTemplate(templateId)
-        if (isTemplateExists !== null) {
-            logger.error({ apiId, msgid, resmsgid, requestBody: req?.body, message: `Template ${templateName} already exists`, code: "QUERY_TEMPLATE_ALREADY_EXISTS" })
-            return ResponseHandler.errorResponse({ message: `Template ${templateName} already exists`, statusCode: 409, errCode: "CONFLICT", code: "QUERY_TEMPLATE_ALREADY_EXISTS" }, req, res);
-        }
+    await validateTemplateExists(req, templateName, templateId)
+    const data = transformRequest(req.body, templateName);
+    await QueryTemplate.create(data)
+    logger.info({ apiId, requestBody: req?.body, message: `Query template created successfully` })
+    return ResponseHandler.successResponse(req, res, { status: 200, data: { template_id: templateId, template_name: templateName, message: `The query template has been saved successfully` } });
 
-        const { validTemplate } = await validateTemplate(requestBody);
-        if (!validTemplate) {
-            logger.error({ apiId, msgid, resmsgid, requestBody: req?.body, message: `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, code: "QUERY_TEMPLATE_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ statusCode: 400, message: `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, errCode: "BAD_REQUEST", code: "QUERY_TEMPLATE_INVALID_INPUT" }, req, res)
-        }
-
-        const data = transformRequest(requestBody, templateName);
-        await QueryTemplate.create(data)
-        logger.info({ apiId, msgid, resmsgid, requestBody: req?.body, message: `Query template created successfully` })
-        return ResponseHandler.successResponse(req, res, { status: 200, data: { template_id: templateId, template_name: templateName, message: `The query template has been saved successfully` } });
-    }
-    catch (error) {
-        logger.error({ error, apiId, resmsgid: _.get(res, "resmsgid"), requestBody: req?.body })
-        let errorMessage: any = error;
-        const statusCode = _.get(error, "statusCode")
-        if (!statusCode || statusCode == 500) {
-            errorMessage = { code: "QUERY_TEMPLATE_CREATION_FAILED", message: "Failed to create query template" }
-        }
-        ResponseHandler.errorResponse(errorMessage, req, res);
-    }
 }
 
 const transformRequest = (req: any, templateName: string) => {

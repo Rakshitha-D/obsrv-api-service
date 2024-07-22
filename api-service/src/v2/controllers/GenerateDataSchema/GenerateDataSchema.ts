@@ -17,7 +17,7 @@ import { ConfigSuggestor } from "../../services/SchemaGenerateService/ConfigSugg
 
 let rollupInfo = {}
 
-const validateRequest = async (req: Request) => {
+const validateRequest = (req: Request) => {
 
     const isRequestValid: Record<string, any> = schemaValidation(req.body, DataSchemaValidation)
     if (!isRequestValid.isValid) {
@@ -28,11 +28,11 @@ const validateRequest = async (req: Request) => {
 
 const dataSchema = async (req: Request, res: Response) => {
 
-    await validateRequest(req)
+    validateRequest(req)
     const request = <DatasetSchemeRequest>req.body.request
     const dataSchemaSpec = schemaGenerate(request.data, request.config)
     ResponseHandler.successResponse(req, res, { status: httpStatus.OK, data: dataSchemaSpec });
-    
+
 }
 
 const schemaGenerate = (sample: Map<string, any>[], config: Record<string, any>): any => {

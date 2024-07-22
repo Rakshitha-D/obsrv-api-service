@@ -8,44 +8,41 @@ import { QueryTemplate } from "../../models/QueryTemplate";
 import { validateTemplate } from "../CreateQueryTemplate/QueryTemplateValidator";
 import { config } from "../../configs/Config";
 import logger from "../../logger";
+import { obsrvError } from "../../types/ObsrvError";
 const apiId = "api.query.template.update";
 const requiredVariables = _.get(config, "template_config.template_required_variables");
 
+const validateRequest = (req: Request) => {
+    const isValidSchema = schemaValidation(req.body, validationSchema);
+    if (!isValidSchema?.isValid) {
+        if (_.includes(isValidSchema.message, "template_name")) {
+            _.set(isValidSchema, "message", "Template name should contain alphanumeric characters and single space between characters")
+        }
+        throw obsrvError("", "QUERY_TEMPLATE_INVALID_INPUT", isValidSchema?.message, "BAD_REQUEST", 400)
+    }
+}
+
+const validateTemplateExists = async (req: Request, templateId: string) => {
+    const isTemplateExists = await getQueryTemplate(templateId)
+    if (isTemplateExists === null) {
+        throw obsrvError("", "QUERY_TEMPLATE_NOT_EXISTS", `Template ${templateId} does not exists`, "NOT_FOUND", 404)
+    }
+
+    const { validTemplate } = await validateTemplate(req.body);
+    if (!validTemplate) {
+        throw obsrvError("", "QUERY_TEMPLATE_INVALID_INPUT", `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, "BAD_REQUEST", 400)
+    }
+}
+
 export const updateQueryTemplate = async (req: Request, res: Response) => {
+
+    validateRequest(req)
     const requestBody = req.body;
     const templateId = _.get(req, "params.templateId");
-    try {
-        const msgid = _.get(req, "body.params.msgid");
-        const resmsgid = _.get(res, "resmsgid");
-        const isValidSchema = schemaValidation(requestBody, validationSchema);
+    await validateTemplateExists(req, templateId)
+    await QueryTemplate.update(requestBody?.request, { where: { template_id: templateId } })
+    logger.info({ apiId, templateId, requestBody, message: `Query template updated successfully` })
+    ResponseHandler.successResponse(req, res, { status: 200, data: { message: "Query template updated successfully", templateId } });
 
-        if (!isValidSchema?.isValid) {
-            if (_.includes(isValidSchema.message, "template_name")) {
-                _.set(isValidSchema, "message", "Template name should contain alphanumeric characters and single space between characters")
-            }
-            logger.error({ apiId, msgid, resmsgid, templateId, requestBody, message: isValidSchema?.message, code: "QUERY_TEMPLATE_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ message: isValidSchema?.message, statusCode: 400, errCode: "BAD_REQUEST", code: "QUERY_TEMPLATE_INVALID_INPUT" }, req, res);
-        }
-
-        const isTemplateExists = await getQueryTemplate(templateId)
-        if (isTemplateExists === null) {
-            logger.error({ apiId, resmsgid, requestBody, templateId, message: `Template ${templateId} does not exists`, code: "QUERY_TEMPLATE_NOT_EXISTS" })
-            return ResponseHandler.errorResponse({ message: `Template ${templateId} does not exists`, statusCode: 404, errCode: "NOT_FOUND", code: "QUERY_TEMPLATE_NOT_EXISTS" }, req, res);
-        }
-
-        const { validTemplate } = await validateTemplate(requestBody);
-        if (!validTemplate) {
-            logger.error({ apiId, msgid, resmsgid, templateId, requestBody: req?.body, message: `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, code: "QUERY_TEMPLATE_INVALID_INPUT" })
-            return ResponseHandler.errorResponse({ statusCode: 400, message: `Invalid template provided, A template should consist of variables ${requiredVariables} and type of json,sql`, errCode: "BAD_REQUEST", code: "QUERY_TEMPLATE_INVALID_INPUT" }, req, res)
-        }
-
-        await QueryTemplate.update(requestBody?.request, { where: { template_id: templateId } })
-        logger.info({ apiId, msgid, resmsgid, templateId, requestBody, message: `Query template updated successfully` })
-        ResponseHandler.successResponse(req, res, { status: 200, data: { message: "Query template updated successfully", templateId } });
-    }
-    catch (error) {
-        logger.error({ error, apiId, templateId, resmsgid: _.get(res, "resmsgid"), requestBody, code: "QUERY_TEMPLATE_UPDATE_FAILED", message: "Failed to update query template" })
-        ResponseHandler.errorResponse({ code: "QUERY_TEMPLATE_UPDATE_FAILED", message: "Failed to update query template" }, req, res);
-    }
 }
 
