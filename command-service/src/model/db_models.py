@@ -125,3 +125,12 @@ class ConnectorRegsitryv2:
     ui_spec: dict | None = None
     updated_by: str | None = None
     livedate: datetime | None = None
+
+@dataclass
+class ConnectorInstance:
+    id: str
+    connector_id: str
+    operations_config: dict
+    connector_runtime: str
+    connector_source: str
+    technology: str

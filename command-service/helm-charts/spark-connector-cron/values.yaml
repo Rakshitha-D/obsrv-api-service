@@ -1,5 +1,5 @@
 nameOverride: ""
-fullnameOverride: "spark-submit-cron"
+fullnameOverride: ""
 namespace: "spark"
 
 replicaCount: 1
@@ -162,5 +162,5 @@ main_file: jdbc-connector-1.0.0.jar
 # main_file: object_store_connector/__main__.py
 
 # The schedule in cron format
-cronSchedule: 0 * * * * # Every hour
+cronSchedule: 0 0 0 * * # Every month
 restartPolicy: OnFailure

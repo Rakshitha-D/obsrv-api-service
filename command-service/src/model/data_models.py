@@ -9,7 +9,7 @@ from dataclasses_json import dataclass_json
 class Command(Enum):
     PUBLISH_DATASET = "PUBLISH_DATASET"
     RESTART_PIPELINE = "RESTART_PIPELINE"
-
+    RESTART_CONNECTORS = "RESTART_CONNECTORS"
 
 class Action(Enum):
     SUBMIT_INGESTION_TASKS = "SUBMIT_INGESTION_TASKS"

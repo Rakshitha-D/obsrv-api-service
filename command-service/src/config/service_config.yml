@@ -24,6 +24,9 @@ commands:
   RESTART_PIPELINE:
     workflow:
       - START_PIPELINE_JOBS
+  RESTART_CONNECTORS:
+    workflow:
+      - DEPLOY_CONNECTORS
 
 alert_manager:
   metrics:
@@ -164,6 +167,13 @@ kafka:
   telemetry:
     topic: system.telemetry.events
 
+connector_jobs:
+  spark:
+    namespace: spark
+    base_helm_chart: spark-connector-cron
+  flink:
+    namespace: streaming-connectors
+    base_helm_chart: flink-connector
 
 connector_registry:
   download_path: /tmp/connector-registry

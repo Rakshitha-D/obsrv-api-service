@@ -177,6 +177,12 @@ class ConnectorRegistry:
         if tenant == "multiple":
             connector_objects = self.metadata["connectors"]
             for obj in connector_objects:
+                source = {
+                    "source": connector_source,
+                    "main_class": obj["main_class"] if "main_class" in obj else self.metadata["metadata"]["main_class"],
+                    "main_program": obj["main_program"] if "main_program" in obj else self.metadata["metadata"]["main_program"],
+                }
+
                 connector_id = obj["id"].replace(" ", "-")
                 registry_meta = ConnectorRegsitryv2(connector_id,
                         obj['name'],
@@ -191,7 +197,7 @@ class ConnectorRegistry:
                         obj['icon'],
                         'Live',
                         rel_path,
-                        connector_source,
+                        json.dumps(source),
                         'SYSTEM',
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -219,6 +225,13 @@ class ConnectorRegistry:
             connector_id = (
                 self.metadata.get("metadata", {}).get("id", "").replace(" ", "-")
             )
+
+            source = {
+                "source": connector_source,
+                "main_class": self.metadata["metadata"]["main_class"],
+                "main_program": self.metadata["metadata"]["main_program"],
+            }
+
             registry_meta = ConnectorRegsitryv2(
                 connector_id,
                 self.metadata['metadata']['name'],
@@ -233,11 +246,11 @@ class ConnectorRegistry:
                 self.metadata['metadata']['icon'],
                 'Live',
                 rel_path,
-                connector_source,
+                json.dumps(source),
                 'SYSTEM',
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                self.ui_spec[obj["id"]] if obj["id"] in self.ui_spec else {},
+                self.ui_spec,
                 'SYSTEM',
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             )
@@ -252,7 +265,7 @@ class ConnectorRegistry:
             return RegistryResponse(
                 status="success",
                 message="Connectors registered successfully",
-                connector_info=registry_meta,
+                connector_info=[registry_meta.to_dict()],
                 statusCode=status.HTTP_200_OK,
             )
 
