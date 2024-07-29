@@ -19,7 +19,7 @@ spec:
             {{- end }}
           labels: {{- include "common.labels.standard" ( dict "customLabels" .Values.commonLabels "context" $ ) | nindent 12 }}
         spec:
-          serviceAccountName: {{ include "base.serviceaccountname" . }}
+          serviceAccountName: {{ .Values.serviceAccount.name }}
           restartPolicy: {{ .Values.restartPolicy }}
           securityContext:
             {{- toYaml .Values.podSecurityContext | nindent 12 }}

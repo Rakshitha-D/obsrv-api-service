@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "enum": ["api.datasets.copy"]
+    },
+    "ver": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "string"
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "msgid": {
+          "type": "string"
+        }
+      },
+      "required": ["msgid"],
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "object",
+          "properties": {
+            "datasetId": {
+              "type": "string",
+              "minLength": 3
+            },
+            "isLive": {
+              "type": "boolean"
+            }
+          },
+          "required": ["datasetId", "isLive"]
+        },
+        "destination": {
+          "type": "object",
+          "properties": {
+            "datasetId": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "required": ["datasetId"]
+        }
+      },
+      "required": ["source", "destination"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["id", "ver", "ts", "params", "request"],
+  "additionalProperties": false
+}

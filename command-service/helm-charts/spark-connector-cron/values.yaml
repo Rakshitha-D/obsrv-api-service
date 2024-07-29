@@ -92,20 +92,7 @@ configmap:
   mountPath: /config
 
 serviceAccount:
-  create: true
-  name: spark-cron-sa
-  annotations: {}
-
-rbac:
-  enabled: true
-  useClusterRole: true
-  rules:
-    - apiGroups: [""]
-      resources: ["pods"]
-      verbs: ["get", "list", "watch"]
-    - apiGroups: [""]
-      resources: ["pods/exec"]
-      verbs: ["create"]
+  name: spark-connectors-sa
 
 serviceMonitor:
   enabled: false

@@ -132,8 +132,6 @@ class ConnectorCommand(ICommand):
             "--set",
             "main_file={}".format(connector_source["main_program"]),
             "--set",
-            "serviceAccount.create=false",
-            "--set",
             "cronSchedule={}".format(connector_instance.operations_config["schedule"])
         ]
 

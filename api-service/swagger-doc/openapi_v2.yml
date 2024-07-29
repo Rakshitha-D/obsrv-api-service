@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: Obsrv API Service
+  title: Obsrv API V2
   description: >-
     Obsrv is a set of APIs that provide access to a variety of data sources and
     datasets. These APIs can be used to analyze different types of events, as
@@ -17,8 +17,11 @@ tags:
   - name: Data Ingest
   - name: Data query
   - name: Data exhaust
+  - name: Query Templates
+  - name: Dataset copy
+  - name: Schema validator
 paths:
-  /v1/datasets/create:
+  /v2/datasets/create:
     post:
       tags:
         - Dataset CRUD APIs
@@ -34,12 +37,12 @@ paths:
               type: object
               example:
                 id: api.datasets.create
-                ver: v1
+                ver: v2
                 ts: '2024-04-10T16:10:50+05:30'
                 params:
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                 request:
-                  dataset_id: sb-telemetry
+                  dataset_id: telemetry_record
                   type: dataset
                   name: sb-telemetry
                   validation_config:
@@ -58,19 +61,35 @@ paths:
                     $schema: https://json-schema.org/draft/2020-12/schema
                     type: object
                     properties:
+                      mid:
+                        type: string
+                        arrival_format: text
+                        data_type: string
+                      ets:
+                        type: integer
+                        arrival_format: number
+                        data_type: epoch
                       eid:
                         type: string
-                      ver:
-                        type: string
-                      required:
-                        - eid
+                        arrival_format: text
+                        data_type: string
                     additionalProperties: true
                   denorm_config:
                     denorm_fields:
-                      - denorm_key: actor.id
+                      - denorm_key: eid
                         denorm_out_field: userdata
-                      - denorm_key: actor.id
-                        denorm_out_field: mid
+                  transformations_config:
+                    - field_key: eid
+                      transformation_function:
+                        type: mask
+                        expr: eid
+                        condition: null
+                      mode: Strict
+                      metadata:
+                        _transformationType: mask
+                        _transformedFieldDataType: string
+                        _transformedFieldSchemaType: string
+                        section: transformation
                   dataset_config:
                     data_key: mid
                     timestamp_key: ets
@@ -89,7 +108,7 @@ paths:
                   summary: Dataset Success
                   value:
                     id: api.datasets.create
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-16T17:56:06+05:30'
                     params:
                       status: SUCCESS
@@ -103,7 +122,7 @@ paths:
                   summary: Master Dataset Success
                   value:
                     id: api.datasets.create
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-16T17:56:06+05:30'
                     params:
                       status: SUCCESS
@@ -124,31 +143,29 @@ paths:
                   summary: 'Failure: Dataset contains duplicate denorm out field'
                   value:
                     id: api.datasets.create
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-16T17:59:06+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 54c5b692-dc37-432e-b556-7f396d7c9e07
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
-                      code: DUPLICATE_DENORM_KEY_FOUND
+                      code: DATASET_DUPLICATE_DENORM_KEY
                       message: Duplicate denorm key found
                       trace: ''
                 example-1:
                   summary: 'Failure: Invalid request payload provided'
                   value:
                     id: api.datasets.create
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-16T18:00:34+05:30'
                     params:
                       status: FAILED
                       resmsgid: 615c1e4c-8c19-44fd-b29c-c235e7cbb5f0
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
-                      code: SCHEMA_VALIDATION_FAILED
+                      code: DATASET_INVALID_INPUT
                       message: >-
                         #additionalProperties should NOT have additional
                         properties
@@ -161,14 +178,13 @@ paths:
                 type: object
               example:
                 id: api.datasets.create
-                ver: v1
+                ver: v2
                 ts: '2024-04-16T17:56:06+05:30'
                 params:
                   status: FAILED
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                   resmsgid: 76612ad1-241b-4ce3-8af4-88db860697f4
                 responseCode: CONFLICT
-                result: {}
                 error:
                   code: DATASET_EXISTS
                   message: Dataset already exists
@@ -181,26 +197,26 @@ paths:
                 type: object
               example:
                 id: api.datasets.create
-                ver: v1
+                ver: v2
                 ts: '2024-04-16T18:02:44+05:30'
                 params:
                   status: FAILED
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                   resmsgid: dd1c0e11-fb4c-484c-81fe-82c9e2eee053
                 responseCode: INTERNAL_SERVER_ERROR
-                result: {}
                 error:
                   code: DATASET_CREATION_FAILURE
                   message: Failed to create dataset
                   trace: ''
-  /v1/datasets/update:
+  /v2/datasets/update:
     patch:
       tags:
         - Dataset CRUD APIs
       summary: Dataset update
       description: >-
         This API allows you to update existing datasets, add or remove denorm
-        fields used by the analytical data source. User can even add, remove or update transformations
+        fields used by the analytical data source. User can even add, remove or
+        update transformations
       requestBody:
         required: true
         content:
@@ -209,13 +225,13 @@ paths:
               type: object
               example:
                 id: api.datasets.update
-                ver: v1
+                ver: v2
                 ts: '2024-04-10T16:10:50+05:30'
                 params:
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                 request:
-                  dataset_id: sb-telemetry.1
-                  version_key: '1713465933736'
+                  dataset_id: telemetry_record
+                  version_key: '1717073955640'
                   name: sb-telemetry
                   validation_config:
                     validate: true
@@ -228,14 +244,14 @@ paths:
                       dedup_key: id
                   dedup_config:
                     drop_duplicates: true
-                    dedup_key: mid
+                    dedup_key: eid
                   data_schema:
                     $schema: https://json-schema.org/draft/2020-12/schema
                     type: object
                     properties:
                       eid:
                         type: string
-                      ver:
+                      ets:
                         type: string
                       required:
                         - eid
@@ -243,11 +259,11 @@ paths:
                   denorm_config:
                     denorm_fields:
                       - values:
-                          denorm_key: actor.id
+                          denorm_key: eid
                           denorm_out_field: userdata
                         action: remove
                       - values:
-                          denorm_key: actor.id
+                          denorm_key: eid
                           denorm_out_field: edata
                         action: add
                   transformation_config:
@@ -265,7 +281,7 @@ paths:
                           section: transformation
                       action: add
                   dataset_config:
-                    data_key: mid
+                    data_key: eid
                     timestamp_key: ets
                   tags:
                     - values:
@@ -285,7 +301,7 @@ paths:
                 type: object
               example:
                 id: api.datasets.update
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T00:16:13+05:30'
                 params:
                   status: SUCCESS
@@ -307,14 +323,13 @@ paths:
                   summary: 'Failure: Invalid payload provided'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:22:12+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 9408e137-ada8-48b8-99e9-90d5cdd35e35
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_UPDATE_INPUT_INVALID
                       message: >-
@@ -325,14 +340,13 @@ paths:
                   summary: 'Failure: No field provided along with dataset_id'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:23:06+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 347f465f-f100-4095-9801-38c4943380c0
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_UPDATE_NO_FIELDS
                       message: >-
@@ -343,14 +357,13 @@ paths:
                   summary: 'Failure: Cannot update as dataset not in draft state'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:25:57+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: a9dfc926-c893-4ec3-82b8-bc8601d928a9
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_NOT_IN_DRAFT_STATE_TO_UPDATE
                       message: Dataset cannot be updated as it is not in draft state
@@ -359,14 +372,13 @@ paths:
                   summary: 'Failure:  Dataset contains duplicate denorm out field'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:29:25+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 865b9bef-9b6d-467c-9065-6689126b0f42
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_DUPLICATE_DENORM_KEY
                       message: Dataset contains duplicate denorm out keys:[userdata]
@@ -375,14 +387,13 @@ paths:
                   summary: 'Failure: Dataset tags to add already exists'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:32:05+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 9e9ff0bc-d660-4c4e-a2b0-cb11246a6961
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_TAGS_EXISTS
                       message: Dataset tags already exist
@@ -391,14 +402,13 @@ paths:
                   summary: 'Failure: Dataset transformations to add already exists'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:34:46+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: e0a5cc26-032e-4be8-81ef-c7e76867c9c1
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_TRANSFORMATIONS_EXIST
                       message: Dataset transformations already exists
@@ -407,14 +417,13 @@ paths:
                   summary: 'Failure: Dataset denorm fields to add already exists'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:38:57+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 0b807580-a2b5-4a44-adc4-80b35b4b6529
                     responseCode: BAD_REQUEST
-                    result: {}
                     error:
                       code: DATASET_DENORM_EXISTS
                       message: Denorm fields already exist
@@ -430,14 +439,13 @@ paths:
                   summary: 'Failure: Dataset does not exists to update'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:20:39+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: ebcf0a62-7c95-40f5-adf2-87ab90a40a80
                     responseCode: NOT_FOUND
-                    result: {}
                     error:
                       code: DATASET_NOT_EXISTS
                       message: Dataset does not exists to update
@@ -446,14 +454,13 @@ paths:
                   summary: 'Failure: Dataset tags to remove do not exist'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:33:33+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: c29e7d0f-3eaf-4972-8804-c172db7b6f13
                     responseCode: NOT_FOUND
-                    result: {}
                     error:
                       code: DATASET_TAGS_DO_NOT_EXIST
                       message: Dataset tags do not exist to remove
@@ -462,14 +469,13 @@ paths:
                   summary: 'Failure: Dataset transformations to update do not exists'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:36:04+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 0b5f515b-1958-4597-b603-b4038d4e5846
                     responseCode: NOT_FOUND
-                    result: {}
                     error:
                       code: DATASET_TRANSFORMATIONS_DO_NOT_EXIST
                       message: Dataset transformations do not exist to update
@@ -478,14 +484,13 @@ paths:
                   summary: 'Failure: Dataset transformations to remove do not exist'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:37:20+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: 69d32411-4252-4b7f-8afa-6d436928c3d3
                     responseCode: NOT_FOUND
-                    result: {}
                     error:
                       code: DATASET_TRANSFORMATIONS_DO_NOT_EXIST
                       message: Dataset transformations do not exist to remove
@@ -494,18 +499,38 @@ paths:
                   summary: 'Failure: Dataset denorm to remove does not exist'
                   value:
                     id: api.datasets.update
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:40:07+05:30'
                     params:
                       status: FAILED
                       msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                       resmsgid: ce78e393-2b74-46da-a70b-2abd06ad3270
                     responseCode: NOT_FOUND
-                    result: {}
                     error:
                       code: DATASET_DENORM_DO_NOT_EXIST
                       message: Denorm fields do not exist to remove
                       trace: ''
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.datasets.update
+                ver: v2
+                ts: '2024-04-24T12:30:18+05:30'
+                params:
+                  status: FAILED
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                  resmsgid: fe4a438d-441c-4497-a3ec-a0cee2058b48
+                responseCode: CONFLICT
+                error:
+                  code: DATASET_OUTDATED
+                  message: >-
+                    The dataset is outdated. Please try to fetch latest changes
+                    of the dataset and perform the updates
+                  trace: ''
         '500':
           description: Internal Server Error
           content:
@@ -514,33 +539,36 @@ paths:
                 type: object
               example:
                 id: api.datasets.update
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:41:33+05:30'
                 params:
                   status: FAILED
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                   resmsgid: 451daa85-9cb8-459a-b681-a256c6e912f0
                 responseCode: INTERNAL_SERVER_ERROR
-                result: {}
                 error:
                   code: DATASET_UPDATE_FAILURE
                   message: Failed to update dataset
                   trace: ''
-  /v1/datasets/read/{dataset_id}:
+  /v2/datasets/read/{dataset_id}:
     get:
       tags:
         - Dataset CRUD APIs
       summary: Dataset read
       description: >-
-        This API allows you to read dataset from the requested dataset_id.
-        User can request for the specific fields and status of the dataset through the request params.
-        By default, the API returns the dataset of status "Live".
+        This API allows you to read dataset from the requested dataset_id. User
+        can request for the specific fields and status of the dataset through
+        the request params. By default, the API returns the dataset of status
+        "Live". 
+        This API accepts the parameter mode=edit to read the draft dataset. If a draft dataset is not found,
+        it creates one using the live dataset and returns the dataset details.
         <br>
         <br>
-        Valid fields that user can request are "dataset_id,id,name,type,validation_config,extraction_config,dedup_config,data_schema,router_config,denorm_config,transformation_config,dataset_config,tags,status,version,created_by,updated_by,created_date,updated_date,published_date"
+        Valid fields that user can request are
+        "dataset_id,id,name,type,validation_config,extraction_config,dedup_config,data_schema,router_config,denorm_config,transformation_config,dataset_config,tags,status,version,created_by,updated_by,created_date,updated_date,published_date"
       parameters:
         - name: dataset_id
-          example: sb_telemetry.1
+          example: sb_telemetry
           in: path
           required: true
           schema:
@@ -557,6 +585,12 @@ paths:
           required: false 
           schema:
             type: string
+        - name: mode
+          example: edit
+          in: query
+          required: false 
+          schema:
+            type: string
       responses:
         '200':
           description: OK
@@ -569,7 +603,7 @@ paths:
                   summary: Read Draft dataset
                   value:
                     id: api.datasets.read
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:43:58+05:30'
                     params:
                       status: SUCCESS
@@ -646,7 +680,7 @@ paths:
                   summary: Read Live dataset
                   value:
                     id: api.datasets.read
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:44:54+05:30'
                     params:
                       status: SUCCESS
@@ -727,7 +761,7 @@ paths:
                   summary: Read specific fields from the dataset
                   value:
                     id: api.datasets.read
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:45:44+05:30'
                     params:
                       status: SUCCESS
@@ -741,7 +775,7 @@ paths:
                   summary: Read version_key from the dataset
                   value:
                     id: api.datasets.read
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:47:48+05:30'
                     params:
                       status: SUCCESS
@@ -749,6 +783,333 @@ paths:
                     responseCode: OK
                     result:
                       version_key: '1713510527662'
+                example-4:
+                  summary: 'Read Dataset: Create a draft dataset on edit live'
+                  value:
+                    id: api.datasets.read
+                    ver: v2
+                    ts: '2024-06-18T14:44:54+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: 9f8f6a80-f056-424a-97c4-179e2b9199f2
+                    responseCode: OK
+                    result:
+                      id: master-telemetry
+                      dataset_id: master-telemetry
+                      type: master-dataset
+                      name: master-telemetry
+                      validation_config:
+                        validate: true
+                        mode: Strict
+                      extraction_config:
+                        is_batch_event: false
+                        extraction_key: ''
+                        dedup_config:
+                          drop_duplicates: true
+                          dedup_key: id
+                          dedup_period: 604800
+                      data_schema:
+                        $schema: http://json-schema.org/draft-04/schema#
+                        type: object
+                        properties:
+                          actor:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                              type:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                            arrival_format: object
+                            data_type: object
+                            additionalProperties: true
+                          eid:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          edata:
+                            type: object
+                            properties:
+                              data:
+                                type: object
+                                properties:
+                                  oldFirstAccessedOn:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  updatedBy:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  lastAccessedOn:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  content_id:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  oldLastAccessedOn:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  progress:
+                                    type: number
+                                    arrival_format: number
+                                    data_type: number
+                                  previousProgress:
+                                    type: number
+                                    arrival_format: number
+                                    data_type: number
+                                  contentType:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  resourceType:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                  objectId:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                arrival_format: object
+                                data_type: object
+                                additionalProperties: true
+                              type:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                              props:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                            arrival_format: object
+                            data_type: object
+                            additionalProperties: true
+                          ver:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          syncts:
+                            type: number
+                            arrival_format: number
+                            data_type: number
+                          '@timestamp':
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          ets:
+                            type: number
+                            arrival_format: number
+                            data_type: number
+                          context:
+                            type: object
+                            properties:
+                              channel:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                              pdata:
+                                type: object
+                                properties:
+                                  id:
+                                    type: string
+                                    arrival_format: text
+                                    data_type: string
+                                arrival_format: object
+                                data_type: object
+                                additionalProperties: true
+                              env:
+                                type: string
+                                arrival_format: text
+                                data_type: string
+                            arrival_format: object
+                            data_type: object
+                            additionalProperties: true
+                          flags:
+                            type: object
+                            properties:
+                              ex_processed:
+                                type: boolean
+                                arrival_format: boolean
+                                data_type: boolean
+                              pp_validation_processed:
+                                type: boolean
+                                arrival_format: boolean
+                                data_type: boolean
+                              pp_duplicate_skipped:
+                                type: boolean
+                                arrival_format: boolean
+                                data_type: boolean
+                            arrival_format: object
+                            data_type: object
+                            additionalProperties: true
+                          mid:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                          type:
+                            type: string
+                            arrival_format: text
+                            data_type: string
+                        additionalProperties: true
+                      dedup_config:
+                        drop_duplicates: false
+                        dedup_key: id
+                        dedup_period: 604800
+                      denorm_config:
+                        redis_db_host: localhost
+                        redis_db_port: 6379
+                        denorm_fields: []
+                      router_config:
+                        topic: master-telemetry
+                      dataset_config:
+                        data_key: ver
+                        timestamp_key: obsrv_meta.syncts
+                        entry_topic: local.masterdata.ingest
+                        redis_db_host: localhost
+                        redis_db_port: 6379
+                        index_data: true
+                        redis_db: 70
+                        file_upload_path: []
+                        configurations:
+                          indexConfiguration:
+                            index:
+                              Event Arrival Time: obsrv_meta.syncts
+                            rollupSuggestions: {}
+                          processing:
+                            dedupKeys: []
+                            dropDuplicates:
+                              - 'Yes'
+                              - 'No'
+                        mergedEvent:
+                          $schema: http://json-schema.org/draft-04/schema#
+                          type: object
+                          properties:
+                            actor:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                                - id
+                                - type
+                            eid:
+                              type: string
+                            edata:
+                              type: object
+                              properties:
+                                data:
+                                  type: object
+                                  properties:
+                                    oldFirstAccessedOn:
+                                      type: string
+                                    updatedBy:
+                                      type: string
+                                    lastAccessedOn:
+                                      type: string
+                                    content_id:
+                                      type: string
+                                    oldLastAccessedOn:
+                                      type: string
+                                    progress:
+                                      type: number
+                                    previousProgress:
+                                      type: number
+                                    contentType:
+                                      type: string
+                                    resourceType:
+                                      type: string
+                                    objectId:
+                                      type: string
+                                  required:
+                                    - oldFirstAccessedOn
+                                    - updatedBy
+                                    - lastAccessedOn
+                                    - content_id
+                                    - oldLastAccessedOn
+                                    - progress
+                                    - previousProgress
+                                    - contentType
+                                    - resourceType
+                                    - objectId
+                                type:
+                                  type: string
+                                props:
+                                  type: string
+                              required:
+                                - data
+                                - type
+                                - props
+                            ver:
+                              type: string
+                            syncts:
+                              type: number
+                            '@timestamp':
+                              type: string
+                            ets:
+                              type: number
+                            context:
+                              type: object
+                              properties:
+                                channel:
+                                  type: string
+                                pdata:
+                                  type: object
+                                  properties:
+                                    id:
+                                      type: string
+                                  required:
+                                    - id
+                                env:
+                                  type: string
+                              required:
+                                - channel
+                                - pdata
+                                - env
+                            flags:
+                              type: object
+                              properties:
+                                ex_processed:
+                                  type: boolean
+                                pp_validation_processed:
+                                  type: boolean
+                                pp_duplicate_skipped:
+                                  type: boolean
+                              required:
+                                - ex_processed
+                                - pp_validation_processed
+                                - pp_duplicate_skipped
+                            mid:
+                              type: string
+                            type:
+                              type: string
+                          required:
+                            - actor
+                            - eid
+                            - edata
+                            - ver
+                            - syncts
+                            - '@timestamp'
+                            - ets
+                            - context
+                            - flags
+                            - mid
+                            - type
+                      tags: []
+                      created_by: SYSTEM
+                      updated_by: SYSTEM
+                      version_key: '1718702094143'
+                      version: 1
+                      status: Draft
+                      api_version: v2
+                      transformations_config: []
         '400':
           description: Bad Request
           content:
@@ -757,13 +1118,12 @@ paths:
                 type: object
               example:
                 id: api.datasets.read
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:46:03+05:30'
                 params:
                   status: FAILED
                   resmsgid: 302fec39-5070-4464-b02f-56b1d0418147
                 responseCode: BAD_REQUEST
-                result: {}
                 error:
                   code: DATASET_INVALID_FIELDS
                   message: >-
@@ -778,13 +1138,12 @@ paths:
                 type: object
               example:
                 id: api.datasets.read
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:46:14+05:30'
                 params:
                   status: FAILED
                   resmsgid: cd71f8c7-6aa9-4b3a-9825-b2caab67fe8c
                 responseCode: NOT_FOUND
-                result: {}
                 error:
                   code: DATASET_NOT_FOUND
                   message: Dataset with the given dataset_id not found
@@ -797,18 +1156,17 @@ paths:
                 type: object
               example:
                 id: api.datasets.read
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:46:34+05:30'
                 params:
                   status: FAILED
                   resmsgid: 29d82020-101d-4506-8fb8-6f3603057064
                 responseCode: INTERNAL_SERVER_ERROR
-                result: {}
                 error:
                   code: DATASET_READ_FAILURE
                   message: Failed to read dataset
                   trace: ''
-  /v1/datasets/list:
+  /v2/datasets/list:
     post:
       tags:
         - Dataset CRUD APIs
@@ -824,7 +1182,7 @@ paths:
               type: object
               example:
                 id: api.datasets.list
-                ver: v1
+                ver: v2
                 ts: '2024-04-10T16:10:50+05:30'
                 params:
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
@@ -843,7 +1201,7 @@ paths:
                   summary: Dataset list success when no filters provided
                   value:
                     id: api.datasets.list
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:54:56+05:30'
                     params:
                       status: SUCCESS
@@ -1273,7 +1631,7 @@ paths:
                   summary: Dataset list success when status filter provided as array
                   value:
                     id: api.datasets.list
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:55:39+05:30'
                     params:
                       status: SUCCESS
@@ -1414,7 +1772,7 @@ paths:
                   summary: Dataset list success when status filter provided as string
                   value:
                     id: api.datasets.list
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:56:13+05:30'
                     params:
                       status: SUCCESS
@@ -1569,7 +1927,7 @@ paths:
                   summary: Dataset list success when type filter provided
                   value:
                     id: api.datasets.list
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:57:28+05:30'
                     params:
                       status: SUCCESS
@@ -1653,7 +2011,7 @@ paths:
                   summary: Dataset list success based on sortBy values
                   value:
                     id: api.datasets.list
-                    ver: v1
+                    ver: v2
                     ts: '2024-04-19T12:58:27+05:30'
                     params:
                       status: SUCCESS
@@ -1798,13 +2156,12 @@ paths:
                 type: object
               example:
                 id: api.datasets.list
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:58:47+05:30'
                 params:
                   status: FAILED
                   resmsgid: f9e1fae9-4660-409d-bb4d-e29888983d4b
                 responseCode: BAD_REQUEST
-                result: {}
                 error:
                   code: DATASET_LIST_INPUT_INVALID
                   message: >-
@@ -1819,440 +2176,2263 @@ paths:
                 type: object
               example:
                 id: api.datasets.list
-                ver: v1
+                ver: v2
                 ts: '2024-04-19T12:59:15+05:30'
                 params:
                   status: FAILED
                   msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
                   resmsgid: 81c3a4a5-e8ac-41de-be00-6d0300ecb106
                 responseCode: INTERNAL_SERVER_ERROR
-                result: {}
                 error:
                   code: DATASET_LIST_FAILURE
                   message: Failed to list dataset
                   trace: ''
-  /444/v1/data/in/sb-telemetry-imported:
-    post:
+  /v2/datasets/diff/{dataset_id}:
+    get:
       tags:
-        - Data Ingest
-      summary: Data ingest
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              example:
-                data:
-                  event:
-                    eid: INTERACT
-                    date: '2022-01-01'
-                    ver: '3.0'
-                    syncts: 1668591949682
-                    ets: 1668591949682
+        - Dataset CRUD APIs
+      summary: Dataset Diff
+      description: >-
+        This API allows you to return the difference between the live and draft
+        dataset by returning additions, deletions and modifications in the
+        dataset.
       parameters:
-        - name: Content-Type
-          in: header
+        - name: dataset_id
+          example: telemetry
+          in: path
+          required: true
           schema:
             type: string
-          example: application/json
       responses:
         '200':
           description: OK
-          headers:
-            X-Powered-By:
-              schema:
-                type: string
-                example: Express
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '162'
-            ETag:
-              schema:
-                type: string
-                example: W/"a2-VX3w1bt3fUXVVCHlq3Stnp7edkc"
-            Date:
-              schema:
-                type: string
-                example: Mon, 01 Apr 2024 10:11:46 GMT
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
-              schema:
-                type: string
-                example: timeout=5
           content:
             application/json:
               schema:
                 type: object
               examples:
                 example-0:
-                  summary: Data ingest successful(individual)
+                  summary: Data Format Diff
                   value:
-                    id: api.data.in
-                    ver: v1
-                    ts: 1711966306164
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T16:55:25+05:30'
                     params:
                       status: SUCCESS
-                      errmsg: ''
+                      resmsgid: c58aa5f7-f182-4dff-9ee9-16f508e53c51
                     responseCode: OK
                     result:
-                      message: Data ingested successfully
+                      additions:
+                        - type: dataFormat
+                          items:
+                            - name: extraction_key
+                              value: mid
+                            - name: batch_id
+                              value: id
+                            - name: dedup_config.dedup_key
+                              value: id
+                      modifications:
+                        - type: dataFormat
+                          items:
+                            - name: is_batch_event
+                              value:
+                                from: false
+                                to: true
+                      deletions: []
                 example-1:
-                  summary: Data ingest successfully(batch)
+                  summary: Timestamp and data key diff
                   value:
-                    id: api.data.in
-                    ver: v1
-                    ts: 1711966352987
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T17:00:44+05:30'
                     params:
                       status: SUCCESS
-                      errmsg: ''
+                      resmsgid: 8ec5fa57-5105-4793-ae96-3a7e0550dbe9
                     responseCode: OK
                     result:
-                      message: Data ingested successfully
-        '400':
-          description: Bad Request
-          headers:
-            X-Powered-By:
-              schema:
-                type: string
-                example: Express
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '195'
-            ETag:
-              schema:
-                type: string
-                example: W/"c3-s9LhoXtWetfBYQZfs6ljrZ6qzi0"
-            Date:
-              schema:
-                type: string
-                example: Mon, 01 Apr 2024 10:13:30 GMT
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
-              schema:
-                type: string
-                example: timeout=5
-          content:
-            application/json:
-              schema:
-                type: object
-              example:
-                id: api.data.in
-                ver: v1
-                ts: 1711966410766
-                params:
-                  status: FAILED
-                  errmsg: >-
-                    #properties/data/oneOf should match exactly one schema in
-                    oneOf
-                responseCode: BAD_REQUEST
-                result: {}
-        '404':
-          description: Not Found
-          headers:
-            X-Powered-By:
-              schema:
-                type: string
-                example: Express
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '157'
-            ETag:
-              schema:
-                type: string
-                example: W/"9d-aWMcO0dxAl8AsPQ5hqQD72PP6NU"
-            Date:
-              schema:
-                type: string
-                example: Mon, 01 Apr 2024 10:14:06 GMT
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
-              schema:
-                type: string
-                example: timeout=5
-          content:
-            application/json:
-              schema:
-                type: object
-              examples:
-                example-0:
-                  summary: Dataset not found
+                      additions: []
+                      modifications:
+                        - type: timestamp
+                          value:
+                            from: syncts
+                            to: ets
+                        - type: dataKey
+                          value:
+                            from: eid
+                            to: mid
+                      deletions: []
+                example-2:
+                  summary: Data Schema Diff
                   value:
-                    id: api.data.in
-                    ver: v1
-                    ts: 1711966446364
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-28T15:40:48+05:30'
                     params:
-                      status: FAILED
-                      errmsg: Dataset with id not found
-                    responseCode: BAD_REQUEST
-                    result: {}
-                example-1:
-                  summary: Entry topic not found
+                      status: SUCCESS
+                      resmsgid: c364416d-b903-4af6-a39b-a4e52c4bf6b5
+                    responseCode: OK
+                    result:
+                      additions:
+                        - type: dataSchema
+                          items:
+                            - name: eid_1
+                              value:
+                                arrivalFormat: boolean
+                                dataType: boolean
+                                absolutePath: $.properties.eid_1
+                                isRequired: false
+                      modifications:
+                        - type: dataSchema
+                          items:
+                            - field: eid
+                              name: type
+                              value:
+                                from: string
+                                to: boolean
+                            - field: eid
+                              name: arrivalFormat
+                              value:
+                                from: text
+                                to: boolean
+                            - field: eid
+                              name: dataType
+                              value:
+                                from: string
+                                to: boolean
+                      deletions:
+                        - type: dataSchema
+                          items:
+                            - name: ver
+                example-3:
+                  summary: Data Validation Diff
                   value:
-                    id: api.data.in
-                    ver: v1
-                    ts: 1711975482739
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T17:05:28+05:30'
                     params:
-                      status: FAILED
-                      errmsg: Entry topic is not defined
-                    responseCode: BAD_REQUEST
-                    result: {}
-  /444/v1/data/query:
+                      status: SUCCESS
+                      resmsgid: ad6b4977-c341-4193-a42f-9b45993e5f8e
+                    responseCode: OK
+                    result:
+                      additions: []
+                      modifications:
+                        - type: validation
+                          items:
+                            - field: mode
+                              value:
+                                from: IgnoreNewFields
+                                to: Strict
+                      deletions: []
+                example-4:
+                  summary: Dataset Dedup diff
+                  value:
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T17:07:58+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: e59b841b-e35f-462d-adb1-31018d718f6a
+                    responseCode: OK
+                    result:
+                      additions:
+                        - type: dedup
+                          items:
+                            - name: dedup_key
+                              value: mid
+                      modifications:
+                        - type: dedup
+                          items:
+                            - name: drop_duplicates
+                              value:
+                                from: false
+                                to: true
+                      deletions: []
+                example-5:
+                  summary: Dataset Denorm Diff
+                  value:
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T17:17:35+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: ee558c17-b3a6-41cc-9b07-64105053394e
+                    responseCode: OK
+                    result:
+                      additions:
+                        - type: denorm
+                          items:
+                            - name: syncts
+                              value:
+                                denorm_key: actor.id
+                                dataset_name: mid
+                      modifications: []
+                      deletions:
+                        - type: denorm
+                          items:
+                            - name: mid
+                              value:
+                                denorm_key: actor.id
+                                dataset_name: mid
+                example-6:
+                  summary: Dataset transformation diff
+                  value:
+                    id: api.datasets.diff
+                    ver: v2
+                    ts: '2024-05-30T17:25:12+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: f4389891-9c09-4ccd-affe-39970590045b
+                    responseCode: OK
+                    result:
+                      additions:
+                        - type: transformations
+                          items:
+                            - name: skill_id
+                              value:
+                                transformation_function:
+                                  type: mask
+                                  condition: null
+                                  expr: skill_id
+                                mode: Strict
+                                metadata:
+                                  section: pii
+                      modifications:
+                        - type: transformations
+                          items:
+                            - name: new
+                              field: transformation_function.type
+                              value:
+                                from: jsonata
+                                to: encrypt
+                                metadata:
+                                  section: transformation
+                      deletions:
+                        - type: transformations
+                          items:
+                            - name: mid
+                              value:
+                                metadata:
+                                  section: transformation
+                            - name: name
+                              value:
+                                metadata:
+                                  section: transformation
+                            - name: neew
+                              value:
+                                metadata:
+                                  section: additionalFields
+  /v2/files/generate-url:
     post:
       tags:
-        - Data query
-      summary: Data query
+        - Dataset CRUD APIs
+      summary: Files generate URL
+      description: >-
+        This API allows you to generate pre signed urls from cloud providers for
+        getting and putting files. On access: write, upload urls are generated to put files and on access: read, download urls are generated to get files.
+      requestBody:
+          content:
+            application/json:
+              examples:
+                example1:
+                    summary: Generate upload URL
+                    value:
+                      id: api.files.generate-url
+                      ver: v2
+                      ts: '2024-04-19T12:58:47+05:30'
+                      params:
+                        msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      request:
+                        files:
+                          - telemetry.json
+                          - school_data.json
+                        access: write
+                example2:
+                  summary: Generate download URL
+                  value:
+                    id: api.files.generate-url
+                    ver: v2
+                    ts: '2024-04-19T12:58:47+05:30'
+                    params:
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                    request:
+                      files:
+                        - telemetry.json
+                        - school_data.json
+                      access: read
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success: Generate Put URL'
+                  value:
+                    id: api.files.generate-url
+                    ver: v2
+                    ts: '2024-05-30T12:04:15+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: a79f1260-1b34-4b96-9c12-cf0f5600e9f3
+                    responseCode: OK
+                    result:
+                      - filePath: >-
+                          obsrv-onest/api-service/user_uploads/telemetry_b16bb2.json
+                        fileName: telemetry.json
+                        preSignedUrl: >-
+                          https://obsrvonest64fd7c37.blob.core.windows.net/obsrv-onest/obsrv-onest/api-service/user_uploads/telemetry_b16bb2.json?sv=2024-05-04&st=2024-05-30T06%3A34%3A15Z&se=2024-05-30T06%3A44%3A15Z&sr=b&sp=w&sig=0zWi7R9wqUT6uW0QuN%2F0nyvaloSCqRPTvzHn%2BpkCWdk%3D
+                      - filePath: >-
+                          obsrv-onest/api-service/user_uploads/school_data_14092a.json
+                        fileName: school_data.json
+                        preSignedUrl: >-
+                          https://obsrvonest64fd7c37.blob.core.windows.net/obsrv-onest/obsrv-onest/api-service/user_uploads/school_data_14092a.json?sv=2024-05-04&st=2024-05-30T06%3A34%3A15Z&se=2024-05-30T06%3A44%3A15Z&sr=b&sp=w&sig=35g%2F46r%2FOI490%2B8pKry9mEbAgXOXznmCyw7L%2FSLITM0%3D
+                example-1:
+                  summary: 'Success: Generate Get URL'
+                  value:
+                    id: api.files.generate-url
+                    ver: v2
+                    ts: '2024-05-30T12:05:47+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 141717fb-9b94-463d-b0f1-1bab40b187cc
+                    responseCode: OK
+                    result:
+                      - filePath: obsrv-onest/api-service/user_uploads/telemetry.json
+                        fileName: telemetry.json
+                        preSignedUrl: >-
+                          https://obsrvonest64fd7c37.blob.core.windows.net/obsrv-onest/obsrv-onest/api-service/user_uploads/telemetry.json?sv=2024-05-04&st=2024-05-30T06%3A35%3A47Z&se=2024-05-30T06%3A45%3A47Z&sr=b&sp=r&sig=UEWKMP9wcETNKA1sXo%2BVI6qZ7Iqk%2BJg6kglaEXz7%2B1Y%3D
+                      - filePath: obsrv-onest/api-service/user_uploads/school_data.json
+                        fileName: school_data.json
+                        preSignedUrl: >-
+                          https://obsrvonest64fd7c37.blob.core.windows.net/obsrv-onest/obsrv-onest/api-service/user_uploads/school_data.json?sv=2024-05-04&st=2024-05-30T06%3A35%3A47Z&se=2024-05-30T06%3A45%3A47Z&sr=b&sp=r&sig=jXzootTAoUAWLYKF9AYwKh9Mzl%2FVctlebTBHVz%2BbaKM%3D
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: Invalid access value requested'
+                  value:
+                    id: api.files.generate-url
+                    ver: v2
+                    ts: '2024-05-30T12:08:23+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: b1da48a0-5381-49a1-9d5f-ce6c7c65fdcf
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: FILES_GENERATE_URL_INPUT_INVALID
+                      message: >-
+                        #properties/request/properties/access/enum should be
+                        equal to one of the allowed values
+                      trace: ''
+                example-1:
+                  summary: >-
+                    Failure: Number of file url requested exceeds the limit
+                    configured
+                  value:
+                    id: api.files.generate-url
+                    ver: v2
+                    ts: '2024-05-30T12:10:29+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 5828abd2-2934-40ef-8fa1-a9bca1e7e24e
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: FILES_URL_GENERATION_LIMIT_EXCEED
+                      message: 'Pre-signed URL generation failed: limit exceeded.'
+                      trace: ''
+  /v2/obsrv/data/sql-query:
+    post:
+      tags:
+        - Dataset CRUD APIs
+      summary: SQL Wrapper
+      description: This api is a wrapper api, used to query the data.
       requestBody:
         content:
           application/json:
             schema:
               type: object
               example:
-                context:
-                  granularity: day
                 query: >-
-                  SELECT * FROM "rollups-configured" WHERE __time >= TIMESTAMP
-                  '2020-12-31' AND __time < TIMESTAMP '2024-01-21' LIMIT 1
+                  SELECT "channel","flags", COUNT(*) AS "Count" FROM "wikipedia"
+                  WHERE "page" IS NOT NULL GROUP BY 1, 2 ORDER BY 3 DESC
       responses:
         '200':
           description: OK
-          headers:
-            X-Powered-By:
-              schema:
-                type: string
-                example: Express
-            Content-Type:
-              schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '2280'
-            ETag:
-              schema:
-                type: string
-                example: W/"8e8-TlKxtgzZCmOLRiPGIN2mpTr0eQ4"
-            Date:
-              schema:
-                type: string
-                example: Mon, 01 Apr 2024 11:46:12 GMT
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
-              schema:
-                type: string
-                example: timeout=5
           content:
             application/json:
               schema:
                 type: object
-              examples:
-                example-0:
-                  summary: 'Success: sql query'
-                  value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711971972855
-                    params:
-                      status: SUCCESS
-                      errmsg: ''
-                    responseCode: OK
-                    result:
-                      - __time: '2022-01-01T00:00:00.000Z'
-                        eid: '1'
-                        ver: '3.0'
-                        flags_ex_processed: 'true'
-                        flags_pp_validation_processed: 'true'
-                        flags_pp_duplicate_skipped: 'true'
-                        flags_device_denorm: 'true'
-                        flags_user_denorm: 'true'
-                        flags_loc_denorm: 'true'
-                        derivedlocationdata_district: AGRA
-                        derivedlocationdata_from: user-profile
-                        derivedlocationdata_state: Uttar Pradesh
-                        mid: 6c3fc8c2-357d-489b-b0c9-afdde6e5c6c0
-                        type: events
-                        actor_type: User
-                        actor_id: 311663b2-d7de-4d46-8803-20407eaa3403
-                        edata_type: session
-                        userdata_subject: null
-                        userdata_district: AGRA
-                        userdata_usersubtype: hm
-                        userdata_grade: null
-                        userdata_usersignintype: Self-Signed-In
-                        userdata_usertype: administrator
-                        userdata_userlogintype: administrator
-                        userdata_state: Uttar Pradesh
-                        devicedata_statecustomcode: '29'
-                        devicedata_country: India
-                        devicedata_iso3166statecode: IN-KA
-                        devicedata_city: Bengaluru
-                        devicedata_countrycode: IN
-                        devicedata_state: Karnataka
-                        devicedata_devicespec_idisk: '106.47'
-                        devicedata_devicespec_webview: 107.0.5304.105
-                        devicedata_devicespec_os: Android 12
-                        devicedata_devicespec_scrn: '6.53'
-                        devicedata_devicespec_sims: '-1'
-                        devicedata_devicespec_cpu: "abi: arm64-v8a processor\t: 0 "
-                        devicedata_devicespec_id: ac4ad4ac3feda0f2b17835b81e736c88c194dc89
-                        devicedata_devicespec_camera: ''
-                        devicedata_devicespec_edisk: '106.27'
-                        devicedata_devicespec_make: vivo 1915
-                        devicedata_statecode: KA
-                        devicedata_districtcustom: BENGALURU URBAN SOUTH
-                        devicedata_statecustomname: Karnataka
-                        devicedata_userdeclared_district: AGRA
-                        devicedata_userdeclared_state: Uttar Pradesh
-                        context_cdata_id: a3c784f0-61d8-43e4-a92a-373fd4338c1d
-                        context_cdata_type: UserSession
-                        context_env: sdk
-                        context_channel: '0126796199493140480'
-                        context_pdata_id: preprod.diksha.app
-                        context_pdata_pid: sunbird.app
-                        context_pdata_ver: 4.10.1023preproduction
-                        context_sid: a3c784f0-61d8-43e4-a92a-373fd4338c1d
-                        context_did: ac4ad4ac3feda0f2b17835b81e736c88c194dc89
-                        context_rollup_l1: '0126796199493140480'
-                        object_id: ''
-                        object_type: ''
-                        object_version: ''
-                        object_rollup: '{}'
-                        count: 3
-                        edata_duration_sum: null
-                example-1:
-                  summary: 'Success: native query'
-                  value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711973520793
-                    params:
-                      status: SUCCESS
-                      errmsg: ''
-                    responseCode: OK
-                    result:
-                      - timestamp: '2022-01-01T00:00:00.000Z'
-                        result:
-                          mid: 1
+              example:
+                - channel: '#en.wikipedia'
+                  flags: ''
+                  Count: 4776
+                - channel: '#fr.wikipedia'
+                  flags: '!M'
+                  Count: 31
+                - channel: '#fa.wikipedia'
+                  flags: B
+                  Count: 30
+                - channel: '#vi.wikipedia'
+                  flags: 'N'
+                  Count: 9
+                - channel: '#ar.wikipedia'
+                  flags: '!N'
+                  Count: 8
+                - channel: '#da.wikipedia'
+                  flags: '!'
+                  Count: 8
+                - channel: '#hy.wikipedia'
+                  flags: '!N'
+                  Count: 8
+                - channel: '#id.wikipedia'
+                  flags: '!N'
+                  Count: 8
+                - channel: '#eu.wikipedia'
+                  flags: M
+                  Count: 3
+                - channel: '#fa.wikipedia'
+                  flags: '!N'
+                  Count: 3
+                - channel: '#fi.wikipedia'
+                  flags: 'N'
+                  Count: 3
+                - channel: '#he.wikipedia'
+                  flags: NB
+                  Count: 3
+                - channel: '#hi.wikipedia'
+                  flags: ''
+                  Count: 1
+                - channel: '#hr.wikipedia'
+                  flags: '!'
+                  Count: 1
+                - channel: '#hr.wikipedia'
+                  flags: '!N'
+                  Count: 1
         '400':
           description: Bad Request
-          headers:
-            X-Powered-By:
+          content:
+            application/json:
               schema:
-                type: string
-                example: Express
-            Content-Type:
+                type: object
+              example:
+                id: api.obsrv.data.sql-query
+                ver: v2
+                ts: '2024-05-30T16:31:57+05:30'
+                params:
+                  status: FAILED
+                  resmsgid: 7709ef5b-d7f3-48a5-bf6c-cf243fb6d2eb
+                responseCode: BAD_REQUEST
+                error:
+                  code: SQL_QUERY_EMPTY_REQUEST
+                  message: Failed to query. Invalid request
+                  trace: ''
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
               schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
-              schema:
-                type: integer
-                example: '201'
-            ETag:
-              schema:
-                type: string
-                example: W/"c9-oV8Psx0gaXpIUOCQT9lFkcsl0SU"
-            Date:
-              schema:
-                type: string
-                example: Mon, 01 Apr 2024 11:49:53 GMT
-            Connection:
-              schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
-              schema:
-                type: string
-                example: timeout=5
+                type: object
+              example:
+                id: api.obsrv.data.sql-query
+                ver: v2
+                ts: '2024-05-29T13:03:44+05:30'
+                params:
+                  status: FAILED
+                  resmsgid: 0b4b7168-2b70-406b-84ce-c320b65559eb
+                responseCode: INTERNAL_SERVER_ERROR
+                error:
+                  code: ERR_BAD_RESPONSE
+                  message: Request failed with status code 500
+                  trace: ''
+  /v2/datasets/status-transition:
+    post:
+      tags:
+        - Dataset CRUD APIs
+      summary: Dataset Status Transition
+      description: >-
+        This API allows you to perform status transition between 2 states.
+        Allowed status transition are:
+        <br>
+  
+         Draft to ReadyToPublish when the dataset configuration is complete and configuration is validated, ReadyToPublish to Live to make dataset live and make it actively running within the pipeline, Live to Retired when dataset is needed to be stopped and retired.User can even Delete the dataset of Draft and ReadyToPublish status.
+      requestBody:
+          content:
+            application/json:
+              examples:
+                example1:
+                    summary: Transition to ReadyToPublish
+                    value:
+                      id: api.datasets.status-transition
+                      ver: v2
+                      ts: '2024-04-19T12:58:47+05:30'
+                      params:
+                        msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      request:
+                        dataset_id: telemetry-events
+                        status: ReadyToPublish
+                example2:
+                    summary: Transition to Live
+                    value:
+                      id: api.datasets.status-transition
+                      ver: v2
+                      ts: '2024-04-19T12:58:47+05:30'
+                      params:
+                        msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      request:
+                        dataset_id: telemetry-events
+                        status: Live
+                example3:
+                    summary: Transition to Retired
+                    value:
+                      id: api.datasets.status-transition
+                      ver: v2
+                      ts: '2024-04-19T12:58:47+05:30'
+                      params:
+                        msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      request:
+                        dataset_id: telemetry-events
+                        status: Retire
+                example4:
+                    summary: Delete a draft dataset
+                    value:
+                      id: api.datasets.status-transition
+                      ver: v2
+                      ts: '2024-04-19T12:58:47+05:30'
+                      params:
+                        msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      request:
+                        dataset_id: telemetry-events
+                        status: Delete
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
                 type: object
               examples:
                 example-0:
-                  summary: 'Failure: invalid date range'
+                  summary: 'Delete success: Deleted dataset successfully'
                   value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711972193426
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T12:18:54+05:30'
                     params:
-                      status: FAILED
-                      errmsg: >-
-                        Invalid date range! make sure your range cannot be more
-                        than 30 days
-                    responseCode: BAD_REQUEST
-                    result: {}
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 5948e784-37f9-4a70-85ca-86c9077ee30b
+                    responseCode: OK
+                    result:
+                      message: Dataset deleted successfully
+                      dataset_id: master.1
                 example-1:
-                  summary: 'Failure: Invalid date range (native)'
+                  summary: 'Live success: Dataset published successfully'
                   value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711972501847
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T12:21:42+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 88d62970-97be-472f-9ccc-67f875d69335
+                    responseCode: OK
+                    result:
+                      message: Dataset published successfully
+                      dataset_id: telemetry
+                example-2:
+                  summary: 'ReadyToPublish success: Dataset is ready to publish'
+                  value:
+                    id: api.datasets.status-transition
+                    ver: v2
+                    ts: '2024-06-18T15:30:04+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 84858e85-6a97-43cb-b8e9-17a7e0a43365
+                    responseCode: OK
+                    result:
+                      message: Dataset status transition to ReadyToPublish successful
+                      dataset_id: telemetry-events
+                example-3:
+                  summary: 'Retire success: Dataset retired successfully'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T12:22:58+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: f2285754-7d5b-4320-943d-797fb136e955
+                    responseCode: OK
+                    result:
+                      message: Dataset retired successfully
+                      dataset_id: sb-telemetry
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Live failure: Dataset in draft state'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T15:37:43+05:30'
                     params:
                       status: FAILED
-                      errmsg: >-
-                        Invalid date range! make sure your range cannot be more
-                        than 30 days
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: d56e2ed4-f008-48be-a501-164c19178419
                     responseCode: BAD_REQUEST
-                    result: {}
+                    error:
+                      code: DATASET_NOT_READY_FOR_PUBLISH
+                      message: Failed to publish dataset as it is in draft state
+                      trace: ''
+                example-1:
+                  summary: 'ReadyToPublish failure: Incomplete dataset configs'
+                  value:
+                    id: api.datasets.status-transition
+                    ver: v2
+                    ts: '2024-06-18T15:36:16+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: a504565b-41ff-4c0f-9d64-f96df9ed89bb
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATASET_CONFIGS_INVALID
+                      message: >-
+                        #properties/denorm_config/properties/denorm_fields/items/required
+                        must have required property 'dataset_name'
+                      trace: ''
+                example-2:
+                  summary: 'ReadyToPublish failure: Dataset not in draft state'
+                  value:
+                    id: api.datasets.status-transition
+                    ver: v2
+                    ts: '2024-06-18T15:38:14+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 351f5a37-87f0-47cd-bebe-e3c001256d0a
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATASET_READYTOPUBLISH_FAILURE
+                      message: >-
+                        Failed to mark dataset Ready to publish as it not in
+                        draft state
+                      trace: ''
+                example-3:
+                  summary: 'Retire Failure: Dataset is already retired'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T15:42:18+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 80208169-b1d3-41cd-816b-83fae96a4370
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATASET_ALREADY_RETIRED
+                      message: Dataset is already retired
+                      trace: ''
+                example-4:
+                  summary: >-
+                    Retire failure: Cannot retire master dataset as it is used
+                    by other datasets
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T16:01:41+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: b88c320a-2c01-4662-a509-bd532a612c05
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATASET_IN_USE
+                      message: Failed to retire dataset as it is used by other datasets
+                      trace: ''
+                example-5:
+                  summary: 'Failure: Invalid request payload provided'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T16:03:56+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: ba4c86bd-b438-4582-b178-2410a5c5dd15
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATASET_STATUS_INVALID_INPUT
+                      message: >-
+                        #properties/request/properties/status/enum should be
+                        equal to one of the allowed values
+                      trace: ''
         '404':
           description: Not Found
-          headers:
-            X-Powered-By:
+          content:
+            application/json:
               schema:
-                type: string
-                example: Express
-            Content-Type:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Delete failure: Dataset not found to delete'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T12:25:36+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 3cdcf2af-c015-4977-9d66-364e00f1712b
+                    responseCode: NOT_FOUND
+                    error:
+                      code: DATASET_NOT_FOUND
+                      message: Dataset not found to delete
+                      trace: ''
+                example-1:
+                  summary: 'Live failure: Dataset not found to publish'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T15:35:59+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 427b3b1a-a0d2-4255-91d9-04ee4a1f0e3c
+                    responseCode: NOT_FOUND
+                    error:
+                      code: DATASET_NOT_FOUND
+                      message: Dataset not found to publish
+                      trace: ''
+                example-2:
+                  summary: 'Retire Failure: Dataset not found to retire'
+                  value:
+                    id: api.datasets.status
+                    ver: v2
+                    ts: '2024-05-30T15:40:31+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                      resmsgid: 73befbbd-60e3-48e0-9cfd-cb705dfc2b85
+                    responseCode: NOT_FOUND
+                    error:
+                      code: DATASET_NOT_FOUND
+                      message: Dataset not found to retire
+                      trace: ''
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
               schema:
-                type: string
-                example: application/json; charset=utf-8
-            Content-Length:
+                type: object
+              example:
+                id: api.datasets.status
+                ver: v2
+                ts: '2024-05-30T16:24:12+05:30'
+                params:
+                  status: FAILED
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6
+                  resmsgid: 92928434-719f-47d4-9946-1e40ecd53253
+                responseCode: INTERNAL_SERVER_ERROR
+                error:
+                  code: DATASET_STATUS_FAILURE
+                  message: Failed to perform status transition on datasets
+                  trace: ''
+  /v2/data/in/{datasetId}:
+      post:
+        tags:
+          - Data Ingest
+        parameters:
+        - required: true
+          schema:
+            title: datasetId
+            type: string
+          name: datasetId
+          in: path
+        summary: Data ingest
+        description: >-
+          This API allows you to ingest events to a data streaming platform in individual or batch format.
+        requestBody:
+          content:
+            application/json:
+              examples:
+                example1:
+                    summary: Ingest individual event
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: "1711966306164"
+                      params:
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                      data:
+                        eid: INTERACT
+                        date: '2022-01-01'
+                        ver: '3.0'
+                        syncts: 1668591949682
+                        ets: 1668591949682
+                example2:
+                    summary: Ingest batch event
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: "1711966306164"
+                      params:
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                      data: [{ "eid": "INTERACT","date": "2022-01-01","ver": "3.0","syncts": 1668591949682}]
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+                examples:
+                  example-0:
+                    summary: Data ingest successful(individual)
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: 1711966306164
+                      params:
+                        status: "SUCCESS"
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                        resmsgid: "ba6391e2-8c35-4c3f-8883-f503b4ffd6a5"
+                      responseCode: OK
+                      result:
+                        message: Data ingested successfully
+                  example-1:
+                    summary: Data ingest successfully(batch)
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: 1711966352987
+                      params:
+                        status: "SUCCESS"
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                        resmsgid: "ba6391e2-8c35-4c3f-8883-f503b4ffd6a5"
+                      responseCode: OK
+                      result:
+                        message: Data ingested successfully
+          '400':
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  type: object
+                example:
+                  id: api.data.in
+                  ver: v2
+                  ts: 1711966410766
+                  params:
+                    status: FAILED
+                    resmsgid: 98020cf9-4239-4b6e-beea-c687d21fafa3
+                  responseCode: BAD_REQUEST
+                  error:
+                    code: DATA_INGESTION_INVALID_INPUT
+                    message: "#required should have required property 'id'"
+                    trace: ''
+          '404':
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  type: object
+                examples:
+                  example-0:
+                    summary: Dataset not found
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: 1711966446364
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 98020cf9-4239-4b6e-beea-c687d21fafa3
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: DATASET_NOT_FOUND
+                        message: Dataset with id not found
+                        trace: ''
+                  example-1:
+                    summary: Entry topic not found
+                    value:
+                      id: api.data.in
+                      ver: v2
+                      ts: 1711975482739
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 98020cf9-4239-4b6e-beea-c687d21fafa3
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: ENTRY_TOPIC_NOT_FOUND
+                        message: Entry topic is not defined
+                        trace: ''
+  /v2/data/query/{datasetId}:
+      post:
+        tags:
+          - Data query
+        summary: Data query
+        parameters:
+        - required: true
+          schema:
+            title: datasetId
+            type: string
+          name: datasetId
+          in: path
+        description: >-
+          This API allows you to query your datasource.
+        requestBody:
+          content:
+            application/json:
+              examples:
+                example1:
+                    summary: SQL query
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: "1711966306164"
+                      params:
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                      context:
+                        datasetId: rollups-configured
+                        table: day
+                      query: >-
+                        SELECT * FROM "rollups-configured" WHERE __time >= TIMESTAMP
+                        '2020-12-31' AND __time < TIMESTAMP '2024-01-21' LIMIT 1
+                example2:
+                    summary: Native query
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: "1711966306164"
+                      params:
+                        mid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                      context:
+                        datasetId: rollups-configured
+                        table: day
+                      query:
+                        quertType: scan
+                        dataSource: rollups-configured
+                        intervals:
+                          type: intervals
+                          intervals: ["2022-01-01/2022-02-01"]
+                        granularity: day
+                        columns: ["eid","__time"]
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+                examples:
+                  example-0:
+                    summary: 'Success: sql query'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711971972855
+                      params:
+                        status: "SUCCESS"
+                        msgid: "e180ecac-8f41-4f21-9a21-0b3a1a368917"
+                        resmsgid: "ba6391e2-8c35-4c3f-8883-f503b4ffd6a5"
+                      responseCode: OK
+                      result:
+                        - __time: '2022-01-01T00:00:00.000Z'
+                          eid: '1'
+                          ver: '3.0'
+                          flags_ex_processed: 'true'
+                          flags_pp_validation_processed: 'true'
+                          flags_pp_duplicate_skipped: 'true'
+                          flags_device_denorm: 'true'
+                          flags_user_denorm: 'true'
+                          flags_loc_denorm: 'true'
+                          derivedlocationdata_district: AGRA
+                          derivedlocationdata_from: user-profile
+                          derivedlocationdata_state: Uttar Pradesh
+                          mid: 6c3fc8c2-357d-489b-b0c9-afdde6e5c6c0
+                          type: events
+                          actor_type: User
+                          actor_id: 311663b2-d7de-4d46-8803-20407eaa3403
+                          edata_type: session
+                          userdata_subject: null
+                          userdata_district: AGRA
+                          userdata_usersubtype: hm
+                          userdata_grade: null
+                          userdata_usersignintype: Self-Signed-In
+                          userdata_usertype: administrator
+                          userdata_userlogintype: administrator
+                          userdata_state: Uttar Pradesh
+                          devicedata_statecustomcode: '29'
+                          devicedata_country: India
+                          devicedata_iso3166statecode: IN-KA
+                          devicedata_city: Bengaluru
+                          devicedata_countrycode: IN
+                          devicedata_state: Karnataka
+                          devicedata_devicespec_idisk: '106.47'
+                          devicedata_devicespec_webview: 107.0.5304.105
+                          devicedata_devicespec_os: Android 12
+                          devicedata_devicespec_scrn: '6.53'
+                          devicedata_devicespec_sims: '-1'
+                          devicedata_devicespec_cpu: "abi: arm64-v8a processor\t: 0 "
+                          devicedata_devicespec_id: ac4ad4ac3feda0f2b17835b81e736c88c194dc89
+                          devicedata_devicespec_camera: ''
+                          devicedata_devicespec_edisk: '106.27'
+                          devicedata_devicespec_make: vivo 1915
+                          devicedata_statecode: KA
+                          devicedata_districtcustom: BENGALURU URBAN SOUTH
+                          devicedata_statecustomname: Karnataka
+                          devicedata_userdeclared_district: AGRA
+                          devicedata_userdeclared_state: Uttar Pradesh
+                          context_cdata_id: a3c784f0-61d8-43e4-a92a-373fd4338c1d
+                          context_cdata_type: UserSession
+                          context_env: sdk
+                          context_channel: '0126796199493140480'
+                          context_pdata_id: preprod.diksha.app
+                          context_pdata_pid: sunbird.app
+                          context_pdata_ver: 4.10.1023preproduction
+                          context_sid: a3c784f0-61d8-43e4-a92a-373fd4338c1d
+                          context_did: ac4ad4ac3feda0f2b17835b81e736c88c194dc89
+                          context_rollup_l1: '0126796199493140480'
+                          object_id: ''
+                          object_type: ''
+                          object_version: ''
+                          object_rollup: '{}'
+                          count: 3
+                          edata_duration_sum: null
+                  example-1:
+                    summary: 'Success: native query'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711973520793
+                      params:
+                        status: SUCCESS
+                        errmsg: ''
+                      responseCode: OK
+                      result:
+                        - timestamp: '2022-01-01T00:00:00.000Z'
+                          result:
+                            mid: 1
+          '400':
+            description: Bad Request
+            content:
+              application/json:
+                schema:
+                  type: object
+                examples:
+                  example-0:
+                    summary: 'Failure: invalid date range (sql)'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711972193426
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: INVALID_DATE_RANGE
+                        message: Invalid date range! make sure your range cannot be more than 30 days
+                        trace: ""
+                  example-1:
+                    summary: 'Failure: Invalid date range (native)'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711972501847
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: INVALID_DATE_RANGE
+                        message: Invalid date range! make sure your range cannot be more than 30 days
+                        trace: ""
+          '404':
+            description: Not Found
+            content:
+              application/json:
+                schema:
+                  type: object
+                examples:
+                  example-0:
+                    summary: 'Failure: Datasource not found in druid'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711972085550
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: DATASOURCE_NOT_FOUND
+                        message: Datasource taxt_trip not found
+                        trace: ""
+                  example-1:
+                    summary: 'Failure: Datasource not found in live table'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711975034302
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: DATASOURCE_NOT_FOUND
+                        message: Datasource taxt_trip not found
+                        trace: ""
+                  example-2:
+                    summary: 'Failure: Datasource not found in live table (native)'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711974978635
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: DATASOURCE_NOT_FOUND
+                        message: Datasource taxt_trip.1_day not available for querying
+                        trace: ""
+                  example-3:
+                    summary: 'Failure: Datasource not found in druid(native)'
+                    value:
+                      id: api.data.out
+                      ver: v2
+                      ts: 1711972569115
+                      params:
+                        status: FAILED
+                        msgid: e180ecac-8f41-4f21-9a21-0b3a1a368917
+                        resmsgid: 5aaf81d1-675d-4071-883a-f92d96656aa4
+                      responseCode: BAD_REQUEST
+                      error:
+                        code: DATASOURCE_NOT_FOUND
+                        message: Datasource taxt_trip.1_day not available for querying
+                        trace: ""
+  /v2/template/read/{template_id}:
+    get:
+      tags:
+        - Query Templates
+      summary: Read template
+      parameters:
+      - required: true
+        schema:
+          title: template_id
+          type: string
+        name: template_id
+        in: path
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
               schema:
-                type: integer
-                example: '201'
-            ETag:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success: JSON template'
+                  value:
+                    id: api.query.template.read
+                    ver: v2
+                    ts: '2024-04-30T12:09:55+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: 8ef3a9d0-8658-47dd-b6cb-a4b1777a1ea4
+                    responseCode: OK
+                    result:
+                      template_id: jsontemplate111
+                      template_name: jsontemplate111
+                      query: >-
+                        {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                      query_type: json
+                      created_by: SYSTEM
+                      updated_by: SYSTEM
+                      created_date: '2024-04-29T01:16:57.023Z'
+                      updated_date: '2024-04-29T01:16:57.023Z'
+                example-1:
+                  summary: 'Success: SQL template'
+                  value:
+                    id: api.query.template.read
+                    ver: v2
+                    ts: '2024-04-30T12:10:54+05:30'
+                    params:
+                      status: SUCCESS
+                      resmsgid: 656185ef-527d-4b60-ac19-263da85142b8
+                    responseCode: OK
+                    result:
+                      template_id: sql1
+                      template_name: sql1
+                      query: >-
+                        "SELECT * FROM {{DATASET}} WHERE __time BETWEEN
+                        TIMESTAMP {{STARTDATE}} AND TIMESTAMP {{ENDDATE}}"
+                      query_type: sql
+                      created_by: SYSTEM
+                      updated_by: SYSTEM
+                      created_date: '2024-04-29T11:29:58.759Z'
+                      updated_date: '2024-04-29T11:29:58.759Z'
+        '404':
+          description: Not Found
+          content:
+            application/json:
               schema:
-                type: string
-                example: W/"c9-oOPdPjvTI/yRUcA8V6d5riD4+80"
-            Date:
+                type: object
+              example:
+                id: api.query.template.read
+                ver: v2
+                ts: '2024-04-30T12:11:45+05:30'
+                params:
+                  status: FAILED
+                  resmsgid: bc6a4621-4ac5-4959-b467-1134ea874960
+                responseCode: NOT_FOUND
+                error:
+                  code: QUERY_TEMPLATE_NOT_EXISTS
+                  message: Template sql100 does not exists
+                  trace: ''
+  /v2/template/delete/{template_id}:
+    delete:
+      tags:
+        - Query Templates
+      summary: Delete template
+      parameters:
+      - required: true
+        schema:
+          title: template_id
+          type: string
+        name: template_id
+        in: path
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
               schema:
-                type: string
-                example: Mon, 01 Apr 2024 11:48:05 GMT
-            Connection:
+                type: object
+              example:
+                id: api.query.template.delete
+                ver: v2
+                ts: '2024-04-30T11:58:27+05:30'
+                params:
+                  status: SUCCESS
+                  resmsgid: 3e2859df-f494-4c47-ae64-e2c34f4ef1cb
+                responseCode: OK
+                result:
+                  message: Template yashash-k deleted successfully
+        '404':
+          description: Not Found
+          content:
+            application/json:
               schema:
-                type: string
-                example: keep-alive
-            Keep-Alive:
+                type: object
+              example:
+                id: api.query.template.delete
+                ver: v2
+                ts: '2024-04-29T18:29:09+05:30'
+                params:
+                  status: FAILED
+                  resmsgid: 6c62ff4d-0a63-4384-a365-7bbef951f288
+                responseCode: NOT_FOUND
+                error:
+                  code: QUERY_TEMPLATE_NOT_EXISTS
+                  message: Template json_template does not exists
+                  trace: ''
+  /v2/template/create/{template_id}:
+    post:
+      tags:
+        - Query Templates
+      summary: Create query template
+      parameters:
+      - required: true
+        schema:
+          title: template_id
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: query.template.create
+                ver: v2
+                ts: '2024-04-10T16:10:50+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                request:
+                  query_type: sql
+                  query:
+                    queryType: select
+                    datasetId: '{{DATASET}}'
+                    intervals: '{{STARTDATE}}/{{ENDDATE}}'
+                    limit: '{{LIMITS}}'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
               schema:
-                type: string
-                example: timeout=5
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success : Create query template success (json)'
+                  value:
+                    id: api.query.template.create
+                    ver: v2
+                    ts: '2024-04-29T22:29:01+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 71372ce0-16b9-4594-8db8-f12eff7e6a42
+                    responseCode: OK
+                    result:
+                      template_id: json11template
+                      template_name: json11template
+                      message: The query template has been saved successfully
+                example-1:
+                  summary: 'Success: Create query template success (SQL)'
+                  value:
+                    id: api.query.template.create
+                    ver: v2
+                    ts: '2024-04-29T22:29:58+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 62aa8c6d-c49c-41c2-9cc8-2f1b02bc2388
+                    responseCode: OK
+                    result:
+                      template_id: sql1
+                      template_name: sql1
+                      message: The query template has been saved successfully
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: Missing required variables'
+                  value:
+                    id: api.query.template.create
+                    ver: v2
+                    ts: '2024-04-29T22:35:10+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 62e18342-7e25-4122-8fca-6fb12fac3ff0
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID
+                      message: >-
+                        Invalid template provided, A template should consist of
+                        variables undefined and type of json,sql
+                      trace: ''
+                example-1:
+                  summary: 'Failure: Schema validation failure'
+                  value:
+                    id: api.query.template.create
+                    ver: v2
+                    ts: '2024-04-29T22:43:57+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: d2b598b5-62c1-4c5d-b0b3-5d7d109a2bc2
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID_INPUT
+                      message: >-
+                        #properties/request/oneOf/0/properties/query_type/enum
+                        should be equal to one of the allowed values
+                      trace: ''
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.query.template.create
+                ver: v2
+                ts: '2024-04-29T22:33:28+05:30'
+                params:
+                  status: FAILED
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                  resmsgid: 18b6b123-4df5-4124-b6ec-73b667250e1c
+                responseCode: CONFLICT
+                error:
+                  code: QUERY_TEMPLATE_ALREADY_EXISTS
+                  message: Template josnaks-aaa already exists
+                  trace: ''
+  /v2/template/list:
+    post:
+      tags:
+        - Query Templates
+      summary: List templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.query.template.list
+                ver: v2
+                ts: '2024-04-10T16:10:50+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                request:
+                  filters:
+                    query_type: sql
+                  sortBy:
+                    - field: created_date
+                      order: desc
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: empty request body
+                  value:
+                    id: api.query.template.list
+                    ver: v2
+                    ts: '2024-04-29T19:16:03+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 5d41ee6e-2fc6-4353-b6c4-49e068f39b2f
+                    responseCode: OK
+                    result:
+                      - template_id: josnaksaaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:25:04.706Z'
+                        updated_date: '2024-04-25T06:25:04.706Z'
+                      - template_id: josnaks-aaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:26:35.749Z'
+                        updated_date: '2024-04-25T06:26:35.749Z'
+                      - template_id: a
+                        template_name: ' a'
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:30:50.179Z'
+                        updated_date: '2024-04-25T06:30:50.179Z'
+                      - template_id: yash-k
+                        template_name: yash k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:08.821Z'
+                        updated_date: '2024-04-25T06:31:08.821Z'
+                      - template_id: yashas-k
+                        template_name: yashas  k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:20.819Z'
+                        updated_date: '2024-04-25T06:31:20.819Z'
+                      - template_id: yashash-k
+                        template_name: YASHASH  k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:39.490Z'
+                        updated_date: '2024-04-25T06:31:39.490Z'
+                      - template_id: yashash-ak
+                        template_name: YASHASH ak
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:33:56.501Z'
+                        updated_date: '2024-04-25T06:33:56.501Z'
+                      - template_id: test_template
+                        template_name: test template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-26T00:24:34.435Z'
+                        updated_date: '2024-04-26T00:24:34.435Z'
+                      - template_id: jsontemplate
+                        template_name: jsontemplate
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-28T23:27:32.113Z'
+                        updated_date: '2024-04-28T23:27:32.113Z'
+                      - template_id: jsontemplate1
+                        template_name: jsontemplate1
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-28T23:28:35.868Z'
+                        updated_date: '2024-04-28T23:28:35.868Z'
+                      - template_id: jsontemplate111
+                        template_name: jsontemplate111
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:16:57.023Z'
+                        updated_date: '2024-04-29T01:16:57.023Z'
+                      - template_id: jso_template
+                        template_name: jso template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:19:42.458Z'
+                        updated_date: '2024-04-29T01:19:42.458Z'
+                      - template_id: json_1template
+                        template_name: json 1template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:22:19.689Z'
+                        updated_date: '2024-04-29T01:22:19.689Z'
+                      - template_id: sql_template
+                        template_name: sql template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:24:03.511Z'
+                        updated_date: '2024-04-29T01:24:03.511Z'
+                      - template_id: sql1template
+                        template_name: sql1template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:26:28.381Z'
+                        updated_date: '2024-04-29T01:26:28.381Z'
+                      - template_id: sql11template
+                        template_name: sql11template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:30:59.381Z'
+                        updated_date: '2024-04-29T01:30:59.381Z'
+                      - template_id: sql11template1
+                        template_name: sql11template1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:31:53.976Z'
+                        updated_date: '2024-04-29T01:31:53.976Z'
+                      - template_id: sql_template_1
+                        template_name: sql template 1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:36:01.592Z'
+                        updated_date: '2024-04-29T01:36:01.592Z'
+                      - template_id: sql_template_11
+                        template_name: sql template 11
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:39:29.968Z'
+                        updated_date: '2024-04-29T01:39:29.968Z'
+                example-1:
+                  summary: 'Success : order by'
+                  value:
+                    id: api.query.template.list
+                    ver: v2
+                    ts: '2024-04-30T11:36:09+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 4393ac57-d441-4be8-b22b-9e4328cab887
+                    responseCode: OK
+                    result:
+                      - template_id: sql11template
+                        template_name: sql11template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-21T01:30:59.381Z'
+                        updated_date: '2024-04-21T01:30:59.381Z'
+                      - template_id: sql11template1
+                        template_name: sql11template1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-22T01:31:53.976Z'
+                        updated_date: '2024-04-22T01:31:53.976Z'
+                      - template_id: josnaksaaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:25:04.706Z'
+                        updated_date: '2024-04-25T06:25:04.706Z'
+                      - template_id: josnaks-aaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:26:35.749Z'
+                        updated_date: '2024-04-25T06:26:35.749Z'
+                      - template_id: a
+                        template_name: ' a'
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:30:50.179Z'
+                        updated_date: '2024-04-25T06:30:50.179Z'
+                      - template_id: yash-k
+                        template_name: yash k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:08.821Z'
+                        updated_date: '2024-04-25T06:31:08.821Z'
+                      - template_id: yashas-k
+                        template_name: yashas  k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:20.819Z'
+                        updated_date: '2024-04-25T06:31:20.819Z'
+                      - template_id: yashash-k
+                        template_name: YASHASH  k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:39.490Z'
+                        updated_date: '2024-04-25T06:31:39.490Z'
+                      - template_id: yashash-ak
+                        template_name: YASHASH ak
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:33:56.501Z'
+                        updated_date: '2024-04-25T06:33:56.501Z'
+                      - template_id: test_template
+                        template_name: test template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-26T00:24:34.435Z'
+                        updated_date: '2024-04-26T00:24:34.435Z'
+                      - template_id: jsontemplate
+                        template_name: jsontemplate
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-28T23:27:32.113Z'
+                        updated_date: '2024-04-28T23:27:32.113Z'
+                      - template_id: jsontemplate1
+                        template_name: jsontemplate1
+                        query: >-
+                          {"queryType":"timeseries","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","aggregations":[{"type":"filtered","aggregator":{"type":"count","name":"a0"},"filter":{"type":"not","field":{"type":"null","column":"school_id"}},"name":"school_id"}]}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-28T23:28:35.868Z'
+                        updated_date: '2024-04-28T23:28:35.868Z'
+                      - template_id: jsontemplate111
+                        template_name: jsontemplate111
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:16:57.023Z'
+                        updated_date: '2024-04-29T01:16:57.023Z'
+                      - template_id: jso_template
+                        template_name: jso template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:19:42.458Z'
+                        updated_date: '2024-04-29T01:19:42.458Z'
+                      - template_id: json_1template
+                        template_name: json 1template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:22:19.689Z'
+                        updated_date: '2024-04-29T01:22:19.689Z'
+                      - template_id: sql_template
+                        template_name: sql template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:24:03.511Z'
+                        updated_date: '2024-04-29T01:24:03.511Z'
+                      - template_id: sql1template
+                        template_name: sql1template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:26:28.381Z'
+                        updated_date: '2024-04-29T01:26:28.381Z'
+                      - template_id: sql_template_1
+                        template_name: sql template 1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:36:01.592Z'
+                        updated_date: '2024-04-29T01:36:01.592Z'
+                      - template_id: sql_template_11
+                        template_name: sql template 11
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:39:29.968Z'
+                        updated_date: '2024-04-29T01:39:29.968Z'
+                      - template_id: json11template
+                        template_name: json11template
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T11:29:01.096Z'
+                        updated_date: '2024-04-29T11:29:01.096Z'
+                      - template_id: sql1
+                        template_name: sql1
+                        query: >-
+                          "SELECT * FROM {{DATASET}} WHERE __time BETWEEN
+                          TIMESTAMP {{STARTDATE}} AND TIMESTAMP {{ENDDATE}}"
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T11:29:58.759Z'
+                        updated_date: '2024-04-29T11:29:58.759Z'
+                example-2:
+                  summary: 'Success : Filters'
+                  value:
+                    id: api.query.template.list
+                    ver: v2
+                    ts: '2024-04-30T11:38:55+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 69da1ef2-c2c5-4f22-bb68-abdf823f0744
+                    responseCode: OK
+                    result:
+                      - template_id: sql_template
+                        template_name: sql template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:24:03.511Z'
+                        updated_date: '2024-04-29T01:24:03.511Z'
+                      - template_id: sql1template
+                        template_name: sql1template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:26:28.381Z'
+                        updated_date: '2024-04-29T01:26:28.381Z'
+                      - template_id: sql_template_1
+                        template_name: sql template 1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:36:01.592Z'
+                        updated_date: '2024-04-29T01:36:01.592Z'
+                      - template_id: sql_template_11
+                        template_name: sql template 11
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T01:39:29.968Z'
+                        updated_date: '2024-04-29T01:39:29.968Z'
+                      - template_id: sql11template
+                        template_name: sql11template
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-21T01:30:59.381Z'
+                        updated_date: '2024-04-21T01:30:59.381Z'
+                      - template_id: sql11template1
+                        template_name: sql11template1
+                        query: >-
+                          "SELECT COUNT(*) FROM \"{{DATASET}}\" WHERE \"__time\"
+                          BETWEEN TIMESTAMP \"{{STARTDATE}}\" AND TIMESTAMP
+                          \"{{ENDDATE}}\""
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-22T01:31:53.976Z'
+                        updated_date: '2024-04-22T01:31:53.976Z'
+                      - template_id: sql1
+                        template_name: sql1
+                        query: >-
+                          "SELECT * FROM {{DATASET}} WHERE __time BETWEEN
+                          TIMESTAMP {{STARTDATE}} AND TIMESTAMP {{ENDDATE}}"
+                        query_type: sql
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-29T11:29:58.759Z'
+                        updated_date: '2024-04-29T11:29:58.759Z'
+                example-3:
+                  summary: 'Success : limit and offset'
+                  value:
+                    id: api.query.template.list
+                    ver: v2
+                    ts: '2024-04-30T11:41:36+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: d1aa35c3-e817-4e2e-85f5-dfd346122192
+                    responseCode: OK
+                    result:
+                      - template_id: josnaksaaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:25:04.706Z'
+                        updated_date: '2024-04-25T06:25:04.706Z'
+                      - template_id: josnaks-aaa
+                        template_name: JOSnaks--aaa
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:26:35.749Z'
+                        updated_date: '2024-04-25T06:26:35.749Z'
+                      - template_id: a
+                        template_name: ' a'
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:30:50.179Z'
+                        updated_date: '2024-04-25T06:30:50.179Z'
+                      - template_id: yash-k
+                        template_name: yash k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:08.821Z'
+                        updated_date: '2024-04-25T06:31:08.821Z'
+                      - template_id: yashas-k
+                        template_name: yashas  k
+                        query: >-
+                          {"queryType":"select","datasetId":"{{DATASET}}","intervals":"{{STARTDATE}}/{{ENDDATE}}","limit":"{{LIMITS}}"}
+                        query_type: json
+                        created_by: SYSTEM
+                        updated_by: SYSTEM
+                        created_date: '2024-04-25T06:31:20.819Z'
+                        updated_date: '2024-04-25T06:31:20.819Z'
+  /v2/template/update/{template_id}:
+    patch:
+      tags:
+        - Query Templates
+      summary: update template
+      parameters:
+      - required: true
+        schema:
+          title: template_id
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.query.template.update
+                ver: v2
+                ts: '2024-04-10T16:10:50+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                request:
+                  template_name: sql_update_test_template
+                  query_type: sql
+                  query: >-
+                    SELECT * FROM {{DATASET}} WHERE __time BETWEEN TIMESTAMP
+                    {{STARTDATE}} AND TIMESTAMP {{ENDDATE}} lIMIT {{LIMIT}}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.query.template.update
+                ver: v2
+                ts: '2024-05-02T13:16:31+05:30'
+                params:
+                  status: SUCCESS
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                  resmsgid: ab869754-d2f0-4b9a-b38b-04d9e5901b5d
+                responseCode: OK
+                result:
+                  message: Query template updated successfully
+                  templateId: sql11template1
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: query should present when query_type provided'
+                  value:
+                    id: api.query.template.update
+                    ver: v2
+                    ts: '2024-05-02T11:30:36+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: f11f5287-77cd-43f0-b7f6-6d6b94b9cea2
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID_INPUT
+                      message: >-
+                        #properties/request/dependencies should have property
+                        query when property query_type is present
+                      trace: ''
+                example-1:
+                  summary: 'Failure: query_type should present when query is given'
+                  value:
+                    id: api.query.template.update
+                    ver: v2
+                    ts: '2024-05-02T11:33:23+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 937cf790-867b-450b-afc9-86a96d02f636
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID_INPUT
+                      message: >-
+                        #properties/request/dependencies should have property
+                        query_type when property query is present
+                      trace: ''
+                example-2:
+                  summary: 'Failure: template name validation failure'
+                  value:
+                    id: api.query.template.update
+                    ver: v2
+                    ts: '2024-05-02T11:34:18+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 9f3ae5aa-2e98-4204-8f87-b11e5bb3865a
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID_INPUT
+                      message: >-
+                        Template name should contain alphanumeric characters and
+                        single space between characters
+                      trace: ''
+                example-3:
+                  summary: 'Failure: required template_id'
+                  value:
+                    id: api.query.template.update
+                    ver: v2
+                    ts: '2024-05-02T11:38:16+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 94b71f80-bd1e-4283-8f3d-83833b60d08c
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID_INPUT
+                      message: >-
+                        #properties/request/required should have required
+                        property 'template_id'
+                      trace: ''
+                example-4:
+                  summary: 'Failure: required variables not exists'
+                  value:
+                    id: api.query.template.update
+                    ver: v2
+                    ts: '2024-05-02T13:13:22+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: dff3c22a-c198-4d1c-b87a-07d725f868f7
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: QUERY_TEMPLATE_INVALID
+                      message: >-
+                        Invalid template provided, A template should consist of
+                        variables DATASET,STARTDATE,ENDDATE and type of json,sql
+                      trace: ''
+  /v2/template/query/{template_id}:
+    post:
+      tags:
+        - Query Templates
+      summary: query template
+      parameters:
+      - required: true
+        schema:
+          title: template_id
+          type: string
+        name: template_id
+        in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.query.template.query
+                ver: v2
+                ts: '2024-04-10T16:10:50+05:30'
+                params:
+                  msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                request:
+                  startdate: '2020-12-31'
+                  enddate: '2024-12-31'
+                  aggregationLevel: month
+                  dataset: test
+                  limit: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Success: JSON template with request body'
+                  value:
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-14T11:52:24+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: b65e0130-5ba4-49f1-bc6a-8a7d66d1a02d
+                    responseCode: OK
+                    result:
+                      - timestamp: '2023-09-01T00:00:00.000Z'
+                        result:
+                          school_id: 0
+                example-1:
+                  summary: 'Success: SQL template query with request body'
+                  value:
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-14T11:33:06+05:30'
+                    params:
+                      status: SUCCESS
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 48c194ee-6e73-4ee7-83e6-8b154e441911
+                    responseCode: OK
+                    result:
+                      - __time: '2023-09-11T00:00:00.000Z'
+                        school_category: secondary
+                        gender: others
+                        state_id: '15'
+                        district_id: '2002'
+                        block_id: '70'
+                        cluster_id: '485'
+                        obsrv.meta.source.connector: null
+                        obsrv.meta.source.id: null
+                        grade_sum: 18
+                        school_id_sum: 180378
+                        students_marked_sum: 12492
+                        students_present_sum: 2466
+                        total_count: 18
+                        total_students_sum: 12492
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                example-0:
+                  summary: 'Failure: invalid date range (native template)'
+                  value:
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-02T12:59:14+05:30'
+                    params:
+                      status: FAILED
+                      resmsgid: 4379e16b-2fa3-46a8-8ded-bc53f56283e9
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATA_OUT_INVALID_DATE_RANGE
+                      message: >-
+                        Invalid date range! make sure your range cannot be more
+                        than 30 days
+                      trace: ''
+                example-1:
+                  summary: 'Failure: invalid date range'
+                  value:
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-13T13:28:18+05:30'
+                    params:
+                      status: FAILED
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 20391fb8-2be8-48b5-a16f-fca150580e97
+                    responseCode: BAD_REQUEST
+                    error:
+                      code: DATA_OUT_INVALID_DATE_RANGE
+                      message: >-
+                        Invalid date range! make sure your range cannot be more
+                        than 30 days
+                      trace: ''
+        '404':
+          description: Not Found
           content:
             application/json:
               schema:
@@ -2261,74 +4441,111 @@ paths:
                 example-0:
                   summary: 'Failure: Datasource not found in druid'
                   value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711972085550
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-13T13:21:46+05:30'
                     params:
                       status: FAILED
-                      errmsg: >-
-                        Datasource rollups-configured.1_rollup_week not
-                        available for querying
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: b35a7050-b94c-4944-9630-233c9542272e
                     responseCode: NOT_FOUND
-                    result: {}
+                    error:
+                      code: DATA_OUT_SOURCE_NOT_FOUND
+                      message: >-
+                        Dataset test with table hour is not available for
+                        querying
+                      trace: ''
                 example-1:
                   summary: 'Failure: Datasource not found in live table'
                   value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711975034302
+                    id: api.query.template.query
+                    ver: v2
+                    ts: '2024-05-13T13:23:47+05:30'
                     params:
                       status: FAILED
-                      errmsg: Datasource undefined not found
+                      msgid: 4a7f14c3-d61e-4d4f-be78-181834eeff6d
+                      resmsgid: 3a303dfd-1d95-4788-b1a7-d88809d4dcf3
                     responseCode: NOT_FOUND
-                    result: {}
-                example-2:
-                  summary: 'Failure: Datasource not found in live table (native)'
-                  value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711974978635
-                    params:
-                      status: FAILED
-                      errmsg: Datasource telemetry-eventssss not found
-                    responseCode: NOT_FOUND
-                    result: {}
-                example-3:
-                  summary: 'Failure: Datasource not found in druid(native)'
-                  value:
-                    id: api.data.out
-                    ver: v1
-                    ts: 1711972569115
-                    params:
-                      status: FAILED
-                      errmsg: >-
-                        Datasource telemetry-events.1_rollup_day not available
-                        for querying
-                    responseCode: NOT_FOUND
-                    result: {}
-  /444/v1/data/exhaust/beckn-test-data:
-    get:
+                    error:
+                      code: DATA_OUT_SOURCE_NOT_FOUND
+                      message: Datasource test11 not available for querying
+                      trace: ''
+  /v2/dataset/copy:
+    post:
       tags:
-        - Data exhaust
-      summary: Data exhaust
-      parameters:
-        - name: from
-          in: query
-          schema:
-            type: string
-          example: '2023-10-01'
-        - name: to
-          in: query
-          schema:
-            type: string
-          example: '2024-03-10'
-        - name: type
-          in: query
-          schema:
-            type: string
-          example: raw
+        - Dataset copy
+      summary: Dataset copy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                id: api.datasets.copy
+                ver: '1.0'
+                ts: '2024-05-21T14:30:00Z'
+                params:
+                  msgid: 127384e4a-a051-4a9f-9b3f-a64a8034fad7
+                request:
+                  source:
+                    datasetId: test_dataset
+                    isLive: true
+                  destination:
+                    datasetId: test-dataset-copy-1
       responses:
         '200':
-          description: Successful response
+          description: OK
           content:
-            application/json: {}
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.dataset.copy
+                ver: v2
+                ts: '2024-05-31T10:57:11+05:30'
+                params:
+                  status: SUCCESS
+                  msgid: 127384e4a-a051-4a9f-9b3f-a64a8034fad7
+                  resmsgid: 77080c18-67b3-489c-af7b-9739709e3c4b
+                responseCode: OK
+                result:
+                  dataset_id: sample1_copy.1
+                  message: Dataset clone successful
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.dataset.copy
+                ver: v2
+                ts: '2024-05-31T10:56:26+05:30'
+                params:
+                  status: FAILED
+                  msgid: 127384e4a-a051-4a9f-9b3f-a64a8034fad7
+                  resmsgid: ''
+                responseCode: BAD_REQUEST
+                error:
+                  code: DATASET_ALREADY_EXISTS
+                  message: Dataset with id sample1 already exists
+                  trace: ''
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                id: api.dataset.copy
+                ver: v2
+                ts: '2024-05-31T10:59:59+05:30'
+                params:
+                  status: FAILED
+                  msgid: 127384e4a-a051-4a9f-9b3f-a64a8034fad7
+                  resmsgid: ''
+                responseCode: NOT_FOUND
+                error:
+                  code: DATASET_NOT_EXISTS
+                  message: Dataset sample does not exists
+                  trace: ''

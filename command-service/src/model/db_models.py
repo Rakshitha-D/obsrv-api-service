@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 from dataclasses_json import dataclass_json
-
 
 @dataclass
 class DatasetsLive:
@@ -17,6 +15,7 @@ class DatasetsLive:
     data_schema: dict
     router_config: dict
     dataset_config: dict
+    version: int
     status: str
     created_by: str
     created_date: datetime
@@ -41,12 +40,17 @@ class DatasetsDraft:
     router_config: dict
     dataset_config: dict
     status: str
+    api_version: str
+    entry_topic: str
     created_by: str
     created_date: datetime
+    sample_data: dict | None = None
+    transformations_config: list[dict] | None = None
+    connectors_config: list[dict] | None = None
+    denorm_config: dict | None = None
     tags: list[str] | None = None
     updated_by: str | None = None
     updated_date: datetime | None = None
-    denorm_config: dict | None = None
     published_date: datetime | None = None
 
 
@@ -72,34 +76,20 @@ class DatasourcesDraft:
 
 
 @dataclass
-class DatasetSourceConfigDraft:
+class DatasetConnectorConfigDraft:
     id: str
-    dataset_id: str
-    connector_type: str
-    status: str
-    created_by: str
-    created_date: datetime
-    connector_config: dict | None = None
-    connector_stats: dict | None = None
-    updated_by: str | None = None
-    updated_date: datetime | None = None
-    published_date: datetime | None = None
+    connector_id: str
+    connector_config: str | None
+    version: str
+    operations_config: dict | None = None
+    data_format: str | None = 'json'
 
 
 @dataclass
 class DatasetTransformationsDraft:
-    id: str
-    dataset_id: str
     field_key: str
     transformation_function: dict
-    status: str
     mode: str
-    created_by: str
-    created_date: datetime
-    updated_by: str | None = None
-    updated_date: datetime | None = None
-    published_date: datetime | None = None
-    metadata: dict | None = None
 
 
 @dataclass_json
@@ -125,6 +115,7 @@ class ConnectorRegsitryv2:
     ui_spec: dict | None = None
     updated_by: str | None = None
     livedate: datetime | None = None
+
 
 @dataclass
 class ConnectorInstance:

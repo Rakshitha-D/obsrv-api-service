@@ -2,7 +2,6 @@ import json
 import time
 
 from dacite import from_dict
-
 from command.icommand import ICommand
 from config import Config
 from model.data_models import CommandPayload, DatasetStatusType
@@ -11,7 +10,6 @@ from model.telemetry_models import Audit, Object, Property, Transition
 from service.db_service import DatabaseService
 from service.http_service import HttpService
 from service.telemetry_service import TelemetryService
-
 
 class DatasetCommand(ICommand):
     def __init__(
@@ -34,6 +32,17 @@ class DatasetCommand(ICommand):
         query = f"""
             SELECT "type", MAX(version) AS max_version FROM datasets_draft WHERE dataset_id = '{dataset_id}' GROUP BY 1
         """
+        dataset_record = self.db_service.execute_select_one(query)
+        if dataset_record is not None:
+            return dataset_record
+        return None
+    
+    def _get_draft_dataset(self, dataset_id):
+        query = f"""
+            SELECT * FROM datasets_draft
+            WHERE dataset_id = '{dataset_id}' AND (status = '{DatasetStatusType.Publish.name}' OR status = '{DatasetStatusType.ReadyToPublish.name}') AND version = (SELECT MAX(version)
+            FROM datasets_draft WHERE dataset_id = '{dataset_id}' AND (status = '{DatasetStatusType.Publish.name}' OR status = '{DatasetStatusType.ReadyToPublish.name}'))
+            """
         dataset_record = self.db_service.execute_select_one(query)
         if dataset_record is not None:
             return dataset_record
